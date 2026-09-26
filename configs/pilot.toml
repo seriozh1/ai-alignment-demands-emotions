@@ -1,0 +1,7 @@
+model_id = "Qwen/Qwen2.5-Omni-7B"
+model_revision = "ae9e1690543ffd5c0221dc27f79834d0294cba00"  # pinned commit on Hugging Face
+model_revision_last_modified = "2025-04-30T13:48:45Z"
+device = "cpu"
+
+n_frames = 64  # as in the MoMentS paper ("64 uniformly sampled frames per question")
+max_pixels = 125440  # 160*28*28 -> frames resized to 448x252 (~4.7k tokens, ~64 s per VT run on CPU); Qwen default 840x476 took ~263 s. Paper does not state a resolution.

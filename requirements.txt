@@ -1,15 +1,8 @@
-# Exact environment used for the MoMentS / Qwen2.5-Omni-7B experiments.
-# Python 3.12.14 (uv-managed CPython), CPU-only PyTorch.
-# Generated with: pip freeze (pip 26.2.1), 2026-09-26.
-# Recreate:
-#   python3.12 -m venv .venv && source .venv/bin/activate
-#   pip install -r requirements.txt
---extra-index-url https://download.pytorch.org/whl/cpu
-
 accelerate==1.15.0
 annotated-doc==0.0.5
 anyio==4.15.1
 asttokens==3.0.2
+audioread==3.1.0
 av==18.1.0
 certifi==2026.7.22
 cffi==2.1.1
@@ -19,6 +12,7 @@ cloudpickle==3.1.2
 comm==0.2.3
 debugpy==1.8.22
 decorator==5.3.1
+decord==0.6.0
 executing==2.2.1
 filelock==3.32.3
 fsspec==2026.7.0
@@ -31,11 +25,13 @@ idna==3.20
 ipykernel==7.3.0
 ipython==9.17.1
 ipython_pygments_lexers==1.1.1
+ipywidgets==8.1.9
 jedi==0.20.0
 Jinja2==3.1.6
 joblib==1.6.0
 jupyter_client==8.10.0
 jupyter_core==5.9.1
+jupyterlab_widgets==3.0.17
 lazy-loader==0.6
 librosa==1.0.0
 llvmlite==0.49.0
@@ -94,3 +90,4 @@ typer==0.27.2
 typing_extensions==4.16.0
 urllib3==2.8.0
 wcwidth==0.9.1
+widgetsnbextension==4.0.16
