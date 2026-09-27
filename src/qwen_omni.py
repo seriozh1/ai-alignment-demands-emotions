@@ -58,7 +58,8 @@ def make_inputs(processor, system_text, user_text, frames=None, fps=None):
 
     if frames is None:
         return processor(text=prompt, return_tensors="pt"), prompt
-    return processor(text=prompt, videos=[frames], fps=fps, return_tensors="pt"), prompt
+    # Frames are already resized by sample_frames; cap_pixels_per_frame=True (Qwen's reference behavior) changes nothing for them
+    return processor(text=prompt, videos=[frames], fps=fps, cap_pixels_per_frame=True, return_tensors="pt"), prompt
 
 
 @torch.inference_mode()
