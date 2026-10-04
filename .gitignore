@@ -34,3 +34,6 @@ dist/
 outputs/
 runs/
 wandb/
+
+# Claude setup
+.claude/
