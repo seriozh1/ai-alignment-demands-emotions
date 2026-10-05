@@ -44,6 +44,7 @@ src/
 configs/                        one TOML per experiment: model revision, frames, prompt texts
 outputs/<date>_<experiment>/    results.jsonl, figures/, other run outputs
 files/                          slides and the MoMentS paper
+slides/                         scripts that build the meeting slides (presentation tooling, not experiment code)
 data-private/                   not in git (see below)
 ```
 
