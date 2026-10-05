@@ -1,0 +1,23 @@
+# Experiment 2026-10-04: question-only floor, explicit abstention (option E), mismatched video, explanations.
+# Run by notebooks/05_2026-10-04_abstain_mismatch_explain.ipynb; results go to outputs/<experiment>/.
+experiment = "2026-10-04_abstain_mismatch_explain"
+
+model_id = "Qwen/Qwen2.5-Omni-7B"
+model_revision = "ae9e1690543ffd5c0221dc27f79834d0294cba00"  # same pinned commit as the pilot
+device = "cpu"
+
+n_frames = 64  # as in the pilot and the MoMentS paper (fewer for the 6 short clips, see notebook 03)
+max_pixels = 125440  # 448x252 frames, same as the pilot
+
+# Conditions, run in this order for each question:
+#   Q_noE : question + options A-D                       (floor, comparable to the pilot's T/VT)
+#   Q     : question + options A-E
+#   T     : transcript + question + options A-E
+#   VT    : T + 64 silent frames of the question's own clip
+#   VTmis : T + 64 silent frames of a clip from a different film (fixed pairing, closest clip length)
+conditions = ["Q_noE", "Q", "T", "VT", "VTmis"]
+option_e = "Cannot tell from the given information."
+
+# Explanation: second turn after the model's own top letter, greedy decoding.
+explain_prompt = "Why did you choose this answer? Explain in one sentence."
+explain_max_new_tokens = 200  # safety cap only; a one-sentence answer stays far below it

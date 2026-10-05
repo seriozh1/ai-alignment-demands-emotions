@@ -1,4 +1,4 @@
-"""Qwen2.5-Omni-7B helpers: load the model, read video frames, build the prompt, score answers A-D.
+"""Qwen2.5-Omni-7B helpers: load the model, read video frames, build the prompt, score answer letters, explain.
 
 Only the Thinker (the text-producing part) is loaded. Audio is never given to the model.
 """
@@ -11,15 +11,20 @@ LETTERS = ["A", "B", "C", "D"]
 SYSTEM_PROMPT = "You are a helpful assistant."  # Qwen's default system prompt
 
 
-def build_prompt(question):
-    """User text for one question (a row of questions.parquet). Identical in T and VT; VT only adds the video."""
-    transcript = question["transcript_focused"] or "(no dialogue)"
-    options = "\n".join(f"{letter}. {question['option_' + letter].strip()}" for letter in LETTERS)
-    return (
-        f"Transcript of the dialogue in the clip:\n{transcript}\n\n"
-        f"Question: {question['question'].strip()}\n{options}\n\n"
-        "Answer with the option's letter only."
-    )
+def build_prompt(question, with_transcript=True, option_e=None):
+    """User text for one question (a row of questions.parquet). Identical in T and VT; VT only adds the video.
+
+    with_transcript=False drops the transcript block (question-only condition).
+    option_e (text) adds a fifth option "E. <option_e>" after A-D.
+    """
+    options = [f"{letter}. {question['option_' + letter].strip()}" for letter in LETTERS]
+    if option_e is not None:
+        options.append(f"E. {option_e}")
+    text = f"Question: {question['question'].strip()}\n" + "\n".join(options) + "\n\nAnswer with the option's letter only."
+    if with_transcript:
+        transcript = question["transcript_focused"] or "(no dialogue)"
+        text = f"Transcript of the dialogue in the clip:\n{transcript}\n\n" + text
+    return text
 
 
 def load(revision):
@@ -42,10 +47,11 @@ def sample_frames(video_path, t_start, t_end, n_frames, max_pixels=None):
     return fetch_video(video, return_video_sample_fps=True)
 
 
-def make_inputs(processor, system_text, user_text, frames=None, fps=None):
+def make_inputs(processor, system_text, user_text, frames=None, fps=None, followup=None):
     """Build the chat prompt and turn it into model inputs.
 
     frames=None gives the T condition (text only); passing frames (and fps) from sample_frames gives VT.
+    followup=(assistant_text, user_text) appends the model's answer and a second user turn (for explanations).
     """
     content = [{"type": "text", "text": user_text}]
     if frames is not None:
@@ -54,6 +60,11 @@ def make_inputs(processor, system_text, user_text, frames=None, fps=None):
         {"role": "system", "content": [{"type": "text", "text": system_text}]},
         {"role": "user", "content": content},
     ]
+    if followup is not None:
+        messages += [
+            {"role": "assistant", "content": [{"type": "text", "text": followup[0]}]},
+            {"role": "user", "content": [{"type": "text", "text": followup[1]}]},
+        ]
     prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
     if frames is None:
@@ -63,14 +74,25 @@ def make_inputs(processor, system_text, user_text, frames=None, fps=None):
 
 
 @torch.inference_mode()
-def score_options(model, processor, inputs):
+def score_options(model, processor, inputs, letters=LETTERS):
     """Probability the model gives to each answer letter as its next token."""
-    letter_ids = [processor.tokenizer.convert_tokens_to_ids(letter) for letter in LETTERS]
+    letter_ids = [processor.tokenizer.convert_tokens_to_ids(letter) for letter in letters]
     logits = model(**inputs).logits[0, -1].float()  # scores for the next token after the prompt
     logprobs = torch.log_softmax(logits, dim=-1)[letter_ids]
     return {
-        "prob": torch.softmax(logprobs, dim=0).tolist(),  # renormalized over A-D, sums to 1
-        "mass_on_letters": logprobs.exp().sum().item(),  # share of ALL next-token probability that went to A-D
+        "prob": torch.softmax(logprobs, dim=0).tolist(),  # renormalized over the letters, sums to 1
+        "mass_on_letters": logprobs.exp().sum().item(),  # share of ALL next-token probability that went to the letters
         "logprob": logprobs.tolist(),
         "n_input_tokens": inputs["input_ids"].shape[1],
     }
+
+
+@torch.inference_mode()
+def generate_text(model, processor, inputs, max_new_tokens):
+    """Greedy (deterministic) text continuation of the prompt, stopping at the end of the assistant turn."""
+    end_id = processor.tokenizer.convert_tokens_to_ids("<|im_end|>")
+    out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False, eos_token_id=end_id, pad_token_id=end_id)
+    new = out[0, inputs["input_ids"].shape[1]:]
+    hit_limit = len(new) == max_new_tokens and new[-1].item() != end_id
+    return {"text": processor.tokenizer.decode(new, skip_special_tokens=True).strip(),
+            "n_tokens": len(new), "hit_limit": hit_limit}

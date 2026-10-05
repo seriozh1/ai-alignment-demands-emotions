@@ -29,9 +29,10 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+.~lock.*#
 
-# Experiment outputs
-outputs/
+# Experiment outputs (results are tracked; files with answer keys are not, the test keys are private)
+outputs/**/explanations.csv
 runs/
 wandb/
 
