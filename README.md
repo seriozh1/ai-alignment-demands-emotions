@@ -44,19 +44,20 @@ src/
 configs/                        one TOML per experiment: model revision, frames, prompt texts
 outputs/<date>_<experiment>/    results.jsonl, figures/, other run outputs
 files/                          slides and the MoMentS paper
-data/                           not in git (see below)
+data-private/                   not in git (see below)
 ```
 
 ## Data
 
-`data/` is git-ignored. Notebook 01 expects, under `data/raw/`:
+`data-private/` is git-ignored. Notebook 01 expects, under `data-private/raw/`:
 
 - `moments_github/`: the public MoMentS repo (the commit is recorded in `SOURCE.txt`);
 - `moments_questions_v4_test_keys.json`: **private** test answer keys from the MoMentS authors;
 - `all_trimmed_trxs/` and `all_videos/`: transcripts and films from the MoMentS authors.
 
-Notebook 01 writes the processed tables to `data/processed/`. Answer keys are kept in a separate table and are loaded
-only after a run, for analysis. `explanations.csv` files contain answer keys and are git-ignored too.
+Notebook 01 writes the processed tables to `data-private/processed/`. Answer keys are kept in a separate table there
+and are loaded only after a run, for analysis. Nothing under `outputs/` stores per-question answer keys (results,
+explanations and saved notebook tables are key-free; only aggregate scores use the keys), so `outputs/` is in git.
 
 ## Setup
 

@@ -1,6 +1,5 @@
-# Private / raw datasets
-data/raw/
-data/processed/
+# Private data: datasets, private answer keys and tables built from them
+data-private/
 
 # Environment variables and secrets
 .env
@@ -31,8 +30,7 @@ dist/
 .DS_Store
 .~lock.*#
 
-# Experiment outputs (results are tracked; files with answer keys are not, the test keys are private)
-outputs/**/explanations.csv
+# Experiment outputs are tracked in git: they never contain answer keys (the test keys are private)
 runs/
 wandb/
 
