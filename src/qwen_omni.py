@@ -4,6 +4,9 @@ Only the Thinker (the text-producing part) is loaded. Audio is never given to th
 """
 import os
 
+# GPU memory: let PyTorch grow its reserved blocks instead of keeping many blocks of slightly different sizes (prompts
+# with video differ in length), which can fill the card; must be set before the first GPU use
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import torch
 
 # Qwen's reader prefers torchcodec when it is installed; all runs so far used decord, so keep the same frames everywhere
@@ -37,11 +40,27 @@ def build_prompt(question, with_transcript=True, option_e=None, order=None):
     return text
 
 
+class LastPositionHead(torch.nn.Module):
+    """The output layer applied to the last position only.
+
+    The model computes next-token scores for every position (152k-word vocabulary each), several GB for a video prompt,
+    but scoring and greedy generation only read the last position, so its scores are unchanged.
+    """
+
+    def __init__(self, head):
+        super().__init__()
+        self.head = head
+
+    def forward(self, hidden_states):
+        return self.head(hidden_states[:, -1:, :])
+
+
 def load(revision):
     processor = Qwen2_5OmniProcessor.from_pretrained(MODEL_ID, revision=revision)
     model = Qwen2_5OmniThinkerForConditionalGeneration.from_pretrained(
         MODEL_ID, revision=revision, dtype=torch.bfloat16
     )
+    model.lm_head = LastPositionHead(model.lm_head)
     model.to("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     return processor, model
