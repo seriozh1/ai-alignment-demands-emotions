@@ -1,0 +1,44 @@
+# Experiment 2026-10-18: experiment 2026-10-04 on all 598 questions, on a GPU, with the options in a random order.
+# Run by notebooks/06_2026-10-18_full_shuffled.ipynb; results go to outputs/<experiment>/.
+experiment = "2026-10-18_full_shuffled"
+
+model_id = "Qwen/Qwen2.5-Omni-7B"
+model_revision = "ae9e1690543ffd5c0221dc27f79834d0294cba00"  # same pinned commit as the pilot
+# device: the GPU when there is one (qwen_omni.load)
+
+n_frames = 64  # as in the pilot and the MoMentS paper (fewer for the 6 short clips, see notebook 03)
+max_pixels = 602112  # Qwen's default cap (768 tokens per frame); above every source video (640x360 or 854x480),
+                     # so frames keep their native resolution. Earlier runs used 125440 (448x252) to run on CPU.
+
+# Conditions, run in this order for each question:
+#   Q_noE : question + options A-D                       (floor, comparable to the pilot's T/VT)
+#   Q     : question + options A-E
+#   T     : transcript + question + options A-E
+#   T_told: told_note + T (the model is told a video exists but is not shown)
+#   VT    : T + 64 silent frames of the question's own clip
+#   VTmis : T + 64 silent frames of a clip from a different film (fixed pairing, closest clip length)
+conditions = ["Q_noE", "Q", "T", "T_told", "VT", "VTmis"]
+option_e = "Cannot tell from the given information."
+told_note = "A video of this scene exists, but it is not shown to you."  # T_told only, before the transcript; factual, no instruction
+
+# Option order (position-bias control): each question gets one random order of its five options, "Cannot tell"
+# included, seeded by shuffle_seed and the question id. The same order is used in every condition (Q_noE: the same
+# order without "Cannot tell"), so conditions differ only in the evidence.
+shuffle_seed = 0
+
+# After the answer, two separate follow-ups (branches): each is the same chat (prompt + the model's own top letter)
+# plus one question, and neither sees the other.
+#   A) free-form explanation, greedy decoding
+explain_prompt = "Explain in one sentence which information you based your answer on."
+explain_max_new_tokens = 200  # safety cap only; a one-sentence answer stays far below it
+#   B) evidence question, scored like the answer (letter probabilities). Identical in every condition, so the
+#      conditions can be compared; the options cover every combination of the inputs that vary (the question is
+#      always given). Shown in a random order per question (seeded by shuffle_seed and the question id), the same
+#      order in every condition.
+evidence_question = "Besides the question and its options, what did you base your answer on?"
+
+[evidence_options]  # key: stored name; value: option text
+nothing = "Nothing else"
+transcript = "A transcript"
+video = "A video"
+both = "Both a transcript and a video"

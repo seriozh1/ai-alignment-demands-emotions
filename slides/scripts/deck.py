@@ -8,7 +8,7 @@ from pptx import Presentation
 from pptx.enum.dml import MSO_THEME_COLOR
 
 ROOT = Path(__file__).resolve().parents[2]  # slides/scripts/deck.py -> repo root
-TEMPLATE = ROOT / "files/AI Alignemnt Davide all slides.pptx"
+TEMPLATE = ROOT / "files/AI Alignemnt Emotions all slides.pptx"
 
 # positions taken from the template's own slides (EMU)
 LEFT, WIDTH = 311700, 8520600

@@ -2,7 +2,12 @@
 
 Only the Thinker (the text-producing part) is loaded. Audio is never given to the model.
 """
+import os
+
 import torch
+
+# Qwen's reader prefers torchcodec when it is installed; all runs so far used decord, so keep the same frames everywhere
+os.environ.setdefault("FORCE_QWENVL_VIDEO_READER", "decord")
 from qwen_omni_utils.v2_5.vision_process import fetch_video  # Qwen's official video reader (uses decord)
 from transformers import Qwen2_5OmniProcessor, Qwen2_5OmniThinkerForConditionalGeneration
 
@@ -11,15 +16,20 @@ LETTERS = ["A", "B", "C", "D"]
 SYSTEM_PROMPT = "You are a helpful assistant."  # Qwen's default system prompt
 
 
-def build_prompt(question, with_transcript=True, option_e=None):
+def build_prompt(question, with_transcript=True, option_e=None, order=None):
     """User text for one question (a row of questions.parquet). Identical in T and VT; VT only adds the video.
 
     with_transcript=False drops the transcript block (question-only condition).
     option_e (text) adds a fifth option "E. <option_e>" after A-D.
+    order (original letters in display order, e.g. ["C", "E", "A", "D", "B"]) shows the options in that order,
+    relabelled A, B, C, ...; None keeps A-D, then E.
     """
-    options = [f"{letter}. {question['option_' + letter].strip()}" for letter in LETTERS]
+    texts = {letter: question["option_" + letter].strip() for letter in LETTERS}
     if option_e is not None:
-        options.append(f"E. {option_e}")
+        texts["E"] = option_e
+    order = order or list(texts)
+    assert sorted(order) == sorted(texts), order
+    options = [f"{shown}. {texts[original]}" for shown, original in zip("ABCDE", order)]
     text = f"Question: {question['question'].strip()}\n" + "\n".join(options) + "\n\nAnswer with the option's letter only."
     if with_transcript:
         transcript = question["transcript_focused"] or "(no dialogue)"
@@ -51,16 +61,16 @@ def sample_frames(video_path, t_start, t_end, n_frames, max_pixels=None):
 def make_inputs(processor, system_text, user_text, frames=None, fps=None, followup=None):
     """Build the chat prompt and turn it into model inputs.
 
+    system_text=None sends no system message; the chat template then adds Qwen's default "You are a helpful assistant."
     frames=None gives the T condition (text only); passing frames (and fps) from sample_frames gives VT.
     followup=(assistant_text, user_text) appends the model's answer and a second user turn (for explanations).
     """
     content = [{"type": "text", "text": user_text}]
     if frames is not None:
         content = [{"type": "video"}] + content
-    messages = [
-        {"role": "system", "content": [{"type": "text", "text": system_text}]},
-        {"role": "user", "content": content},
-    ]
+    messages = [{"role": "user", "content": content}]
+    if system_text is not None:
+        messages = [{"role": "system", "content": [{"type": "text", "text": system_text}]}] + messages
     if followup is not None:
         messages += [
             {"role": "assistant", "content": [{"type": "text", "text": followup[0]}]},

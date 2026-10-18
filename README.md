@@ -25,6 +25,7 @@ Confidence is the probability of each answer letter as the model's next token. A
 |---|---|---|---|---|
 | 2026-09-28 | Pilot: T vs VT, options A–D | [04](notebooks/04_2026-09-28_pilot_run.ipynb) | [config](configs/2026-09-28_pilot.toml) | [outputs](outputs/2026-09-28_pilot/) |
 | 2026-10-04 | Abstention (option E), question-only floor, mismatched video, one-sentence explanations | [05](notebooks/05_2026-10-04_abstain_mismatch_explain.ipynb) | [config](configs/2026-10-04_abstain_mismatch_explain.toml) | [outputs](outputs/2026-10-04_abstain_mismatch_explain/) |
+| 2026-10-18 | As 05, all 598 questions, options in a random order (position-bias control), native-resolution frames, new condition T_told (told a video exists but is not shown), two follow-up branches (free-form explanation, evidence question), on a GPU | [06](notebooks/06_2026-10-18_full_shuffled.ipynb) | [config](configs/2026-10-18_full_shuffled.toml) | [outputs](outputs/2026-10-18_full_shuffled/) |
 
 Each experiment notebook ends with its analysis and plots. Results are appended to `results.jsonl` one row per
 (question, condition), so a run can be stopped and resumed, or extended with more questions.
@@ -38,6 +39,7 @@ notebooks/
   03_select_questions.ipynb     keep Emotions questions, drop 1 broken clip, fix a random question order
   04_2026-09-28_pilot_run.ipynb pilot run + analysis
   05_2026-10-04_...ipynb        abstention / mismatch / explanations run + analysis
+  06_2026-10-18_...ipynb        full run: shuffled options, two follow-up branches (GPU) + analysis
 src/
   qwen_omni.py                  model loading, frame sampling, prompt building, letter scoring, text generation
   video_alignment.py            transcript-video sync check (used by notebook 01)
@@ -62,5 +64,5 @@ explanations and saved notebook tables are key-free; only aggregate scores use t
 
 ## Setup
 
-Python 3.12. `pip install -r requirements.txt`. The model (~18 GB RAM) runs on CPU. A question with video takes about
-1–3 minutes, depending on the experiment.
+Python 3.12. `pip install -r requirements.txt`. The model (~18 GB RAM) runs on the GPU when there is one, otherwise on
+CPU, where a question with video takes about 1–3 minutes, depending on the experiment.
