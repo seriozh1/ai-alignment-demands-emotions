@@ -32,6 +32,7 @@ def load(revision):
     model = Qwen2_5OmniThinkerForConditionalGeneration.from_pretrained(
         MODEL_ID, revision=revision, dtype=torch.bfloat16
     )
+    model.to("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     return processor, model
 
@@ -77,6 +78,7 @@ def make_inputs(processor, system_text, user_text, frames=None, fps=None, follow
 def score_options(model, processor, inputs, letters=LETTERS):
     """Probability the model gives to each answer letter as its next token."""
     letter_ids = [processor.tokenizer.convert_tokens_to_ids(letter) for letter in letters]
+    inputs = inputs.to(model.device)
     logits = model(**inputs).logits[0, -1].float()  # scores for the next token after the prompt
     logprobs = torch.log_softmax(logits, dim=-1)[letter_ids]
     return {
@@ -91,6 +93,7 @@ def score_options(model, processor, inputs, letters=LETTERS):
 def generate_text(model, processor, inputs, max_new_tokens):
     """Greedy (deterministic) text continuation of the prompt, stopping at the end of the assistant turn."""
     end_id = processor.tokenizer.convert_tokens_to_ids("<|im_end|>")
+    inputs = inputs.to(model.device)
     out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False, eos_token_id=end_id, pad_token_id=end_id)
     new = out[0, inputs["input_ids"].shape[1]:]
     hit_limit = len(new) == max_new_tokens and new[-1].item() != end_id
