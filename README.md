@@ -16,8 +16,14 @@ Confidence is the probability of each answer letter as the model's next token. A
 | Q_noE | question + options A–D |
 | Q | question + options A–E |
 | T | transcript + question + options |
+| T_told | "A video of this scene exists, but it is not shown to you." + T (from experiment 06) |
 | VT | T + 64 silent frames of the clip |
 | VTmis | T + 64 silent frames of a clip from a different film |
+
+From experiment 06 the options are shown in a random order per question (the same in every condition), and after the
+answer the model gets two separate follow-up questions: a free-form explanation of the information it used, and a
+four-option evidence question (nothing else / a transcript / a video / both). Exact texts are in the
+[config](configs/2026-10-18_full_shuffled.toml).
 
 ## Experiments
 
@@ -29,6 +35,19 @@ Confidence is the probability of each answer letter as the model's next token. A
 
 Each experiment notebook ends with its analysis and plots. Results are appended to `results.jsonl` one row per
 (question, condition), so a run can be stopped and resumed, or extended with more questions.
+
+## Results so far (experiment 06, all 598 questions)
+
+- Abstention follows the evidence: question only 62%, transcript 47%, with the video 29%; a video from a different film
+  raises it back to 42% (each step p < 0.001, paired).
+- The video changes *whether* the model answers, not *how well*: the best of A–D is right about equally often with the
+  transcript (55%), the video (56%) and the wrong video (53%).
+- Told that a video exists but is not shown (T_told), it abstains as often as with the question only (62%), but mostly
+  across the board rather than where the video matters.
+- Self-report does not register the video: asked what it used, the model names a video in 6.5% of cases with its own
+  video, and 9.2% with no video at all (question only, Q_noE). The explanations are not coded yet (keyword screens only).
+- Slides: [slides/decks/2026-10-19_full_run.pptx](slides/decks/2026-10-19_full_run.pptx); all numbers in
+  [notebook 06](notebooks/06_2026-10-18_full_shuffled.ipynb), including its "Additional tests" section.
 
 ## Files
 
@@ -65,4 +84,6 @@ explanations and saved notebook tables are key-free; only aggregate scores use t
 ## Setup
 
 Python 3.12. `pip install -r requirements.txt`. The model (~18 GB RAM) runs on the GPU when there is one, otherwise on
-CPU, where a question with video takes about 1–3 minutes, depending on the experiment.
+CPU, where a question with video takes about 1–3 minutes, depending on the experiment. Experiment 06 (598 questions,
+6 conditions, native-resolution frames) took 4.3 hours on one NVIDIA L40S (46 GB): about 1 s per text condition and
+11 s per video condition.

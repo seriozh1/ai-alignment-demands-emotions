@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.enum.dml import MSO_THEME_COLOR
+from pptx.util import Pt
 
 ROOT = Path(__file__).resolve().parents[2]  # slides/scripts/deck.py -> repo root
 TEMPLATE = ROOT / "files/AI Alignemnt Emotions all slides.pptx"
@@ -71,4 +72,31 @@ def slide(prs, title, bullets, figure=None, layout="below", body_height=1050000)
         scale = min(WIDTH / pic.width, (prs.slide_height - top - 120000) / pic.height)
         pic.width, pic.height = int(pic.width * scale), int(pic.height * scale)
         pic.left = (prs.slide_width - pic.width) // 2
+    return s
+
+
+def table_slide(prs, title, header, rows, bullets=(), body_height=600000, font_size=12):
+    """Title, optional bullets, and a table under them (header row + rows of strings), in the template's table style."""
+    s = prs.slides.add_slide(prs.slide_layouts[2])  # TITLE_AND_BODY
+    set_text(s.placeholders[0], title)
+    body = s.placeholders[1]
+    if bullets:
+        for i, b in enumerate(bullets):
+            level, text = b if isinstance(b, tuple) else (0, b)
+            set_text(body, text, level, new_paragraph=i > 0)
+        body.left, body.top, body.width, body.height = LEFT, BODY_TOP, WIDTH, body_height
+        top = BODY_TOP + body_height + 80000
+    else:
+        body._element.getparent().remove(body._element)
+        top = BODY_TOP
+    row_height = Pt(font_size * 2.1)
+    table = s.shapes.add_table(len(rows) + 1, len(header), LEFT, top, WIDTH, row_height * (len(rows) + 1)).table
+    for r, values in enumerate([header] + list(rows)):
+        table.rows[r].height = row_height
+        for c, value in enumerate(values):
+            cell = table.cell(r, c)
+            cell.text = str(value)
+            for p in cell.text_frame.paragraphs:
+                for run in p.runs:
+                    run.font.size = Pt(font_size)
     return s
