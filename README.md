@@ -33,7 +33,9 @@ four-option evidence question (nothing else / a transcript / a video / both). Ex
 | 2026-10-04 | Abstention (option E), question-only floor, mismatched video, one-sentence explanations | [05](notebooks/05_2026-10-04_abstain_mismatch_explain.ipynb) | [config](configs/2026-10-04_abstain_mismatch_explain.toml) | [outputs](outputs/2026-10-04_abstain_mismatch_explain/) |
 | 2026-10-18 | As 05, all 598 questions, options in a random order (position-bias control), native-resolution frames, new condition T_told (told a video exists but is not shown), two follow-up branches (free-form explanation, evidence question), on a GPU | [06](notebooks/06_2026-10-18_full_shuffled.ipynb) | [config](configs/2026-10-18_full_shuffled.toml) | [outputs](outputs/2026-10-18_full_shuffled/) |
 | 2026-10-19 | Coding of 06's free-form explanations: five yes/no codes, two LLM judges (Claude Haiku 5.5, GPT-6 Luna, via OpenRouter); `judge_labels_v1.jsonl` is the first run, before `cites_dialogue` excluded speech repeated from the question | [07](notebooks/07_2026-10-19_code_explanations.ipynb) | [config](configs/2026-10-19_code_explanations.toml) | [outputs](outputs/2026-10-19_code_explanations/) |
-| 2026-10-25 | As 06 with a second model, InternVL2.5-8B (the only non-Qwen open model in the MoMentS paper) | [08](notebooks/08_2026-10-25_internvl_full.ipynb) | [config](configs/2026-10-25_internvl_full.toml) | not run yet |
+| 2026-10-25 | As 06 with a second model, InternVL2.5-8B (the only non-Qwen open model in the MoMentS paper) | [08](notebooks/08_2026-10-25_internvl_full.ipynb) | [config](configs/2026-10-25_internvl_full.toml) | [outputs](outputs/2026-10-25_internvl_full/) |
+| 2026-10-25 | Coding of 08's explanations, as 07 (same judges and prompt) | [09](notebooks/09_2026-10-25_code_explanations_internvl.ipynb) | [config](configs/2026-10-25_code_explanations_internvl.toml) | [outputs](outputs/2026-10-25_code_explanations_internvl/) |
+| 2026-10-25 | Qwen vs InternVL: behavior, evidence question, explanation codes (no model needed) | [10](notebooks/10_2026-10-25_compare_models.ipynb) | - | [outputs](outputs/2026-10-25_compare_models/) |
 
 Each experiment notebook ends with its analysis and plots. Results are appended to `results.jsonl` one row per
 (question, condition), so a run can be stopped and resumed, or extended with more questions.
@@ -52,10 +54,21 @@ Each experiment notebook ends with its analysis and plots. Results are appended 
   about as often as with the right one (15.2% vs 16.4%), and no explanation notices the mismatch; with no video at all,
   6.9% cite things seen; told that a video exists, 7.9% name the missing video.
 - Slides: [slides/decks/2026-10-19_full_run.pptx](slides/decks/2026-10-19_full_run.pptx),
-  [slides/decks/2026-10-25_final_coding.pptx](slides/decks/2026-10-25_final_coding.pptx) and the summary
+  [slides/decks/2026-10-25_final_coding.pptx](slides/decks/2026-10-25_final_coding.pptx),
+  [slides/decks/2026-10-25_second_model.pptx](slides/decks/2026-10-25_second_model.pptx) and the summary
   [slides/decks/2026-10-19_summary.pptx](slides/decks/2026-10-19_summary.pptx); numbers in
   [notebook 06](notebooks/06_2026-10-18_full_shuffled.ipynb) (including its "Additional tests" section) and
   [notebook 07](notebooks/07_2026-10-19_code_explanations.ipynb).
+
+## Second model (experiments 08–10, InternVL2.5-8B)
+
+- Replicates: abstention falls with the transcript (59% to 42%) and the video (14%); told that a video exists, it
+  abstains more (54%), again mostly across the board; no explanation notices a video from the wrong film.
+- Differs: with the wrong film's video it abstains barely more (14% to 16%, p = 0.22; Qwen 29% to 42%), although its
+  best A–D answer is right less often (56.4% to 49.0%, p < 0.001; below the transcript alone, 51.2%).
+- It says it used a video far more often than Qwen (63% with its own video), but also 48% with the wrong one and 14%
+  with none; its explanations cite things seen in 34%, 24% and 14%.
+- Judges agree as for Qwen (kappa 0.73–0.99). Numbers in [notebook 10](notebooks/10_2026-10-25_compare_models.ipynb).
 
 ## Files
 
@@ -69,6 +82,8 @@ notebooks/
   06_2026-10-18_...ipynb        full run: shuffled options, two follow-up branches (GPU) + analysis
   07_2026-10-19_...ipynb        explanation coding with two LLM judges + agreement and codes by condition
   08_2026-10-25_...ipynb        as 06 with InternVL2.5-8B
+  09_2026-10-25_...ipynb        as 07 for 08's explanations
+  10_2026-10-25_...ipynb        Qwen vs InternVL comparison (tables and figures)
 src/
   qwen_omni.py                  model loading, frame sampling, prompt building, letter scoring, text generation
   internvl.py                   the same for InternVL2.5-8B (same prompts and frames)
