@@ -1,0 +1,25 @@
+# Experiment 2026-10-25: experiment 2026-10-18_full_shuffled with a second model from another family, InternVL2.5-8B
+# (the only non-Qwen open model evaluated in the MoMentS paper). Everything except the model is as in 2026-10-18.
+# Run by notebooks/08_2026-10-25_internvl_full.ipynb; results go to outputs/<experiment>/.
+experiment = "2026-10-25_internvl_full"
+
+model_id = "OpenGVLab/InternVL2_5-8B-MPO-hf"  # InternVL2.5-8B after preference optimization, the native-transformers release
+model_revision = "543db189852edd2dbf0c0395c6afe4159cdc842f"
+
+n_frames = 64
+max_pixels = 602112  # frames decoded as for Qwen (native resolution); InternVL then resizes each to 448x448 (256 tokens)
+
+conditions = ["Q_noE", "Q", "T", "T_told", "VT", "VTmis"]
+option_e = "Cannot tell from the given information."
+told_note = "A video of this scene exists, but it is not shown to you."
+shuffle_seed = 0
+
+explain_prompt = "Explain in one sentence which information you based your answer on."
+explain_max_new_tokens = 200
+evidence_question = "Besides the question and its options, what did you base your answer on?"
+
+[evidence_options]
+nothing = "Nothing else"
+transcript = "A transcript"
+video = "A video"
+both = "Both a transcript and a video"

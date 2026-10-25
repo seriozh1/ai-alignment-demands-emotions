@@ -32,6 +32,8 @@ four-option evidence question (nothing else / a transcript / a video / both). Ex
 | 2026-09-28 | Pilot: T vs VT, options A–D | [04](notebooks/04_2026-09-28_pilot_run.ipynb) | [config](configs/2026-09-28_pilot.toml) | [outputs](outputs/2026-09-28_pilot/) |
 | 2026-10-04 | Abstention (option E), question-only floor, mismatched video, one-sentence explanations | [05](notebooks/05_2026-10-04_abstain_mismatch_explain.ipynb) | [config](configs/2026-10-04_abstain_mismatch_explain.toml) | [outputs](outputs/2026-10-04_abstain_mismatch_explain/) |
 | 2026-10-18 | As 05, all 598 questions, options in a random order (position-bias control), native-resolution frames, new condition T_told (told a video exists but is not shown), two follow-up branches (free-form explanation, evidence question), on a GPU | [06](notebooks/06_2026-10-18_full_shuffled.ipynb) | [config](configs/2026-10-18_full_shuffled.toml) | [outputs](outputs/2026-10-18_full_shuffled/) |
+| 2026-10-19 | Coding of 06's free-form explanations: five yes/no codes, two LLM judges (Claude Haiku 5.5, GPT-6 Luna, via OpenRouter); `judge_labels_v1.jsonl` is the first run, before `cites_dialogue` excluded speech repeated from the question | [07](notebooks/07_2026-10-19_code_explanations.ipynb) | [config](configs/2026-10-19_code_explanations.toml) | [outputs](outputs/2026-10-19_code_explanations/) |
+| 2026-10-25 | As 06 with a second model, InternVL2.5-8B (the only non-Qwen open model in the MoMentS paper) | [08](notebooks/08_2026-10-25_internvl_full.ipynb) | [config](configs/2026-10-25_internvl_full.toml) | not run yet |
 
 Each experiment notebook ends with its analysis and plots. Results are appended to `results.jsonl` one row per
 (question, condition), so a run can be stopped and resumed, or extended with more questions.
@@ -45,9 +47,15 @@ Each experiment notebook ends with its analysis and plots. Results are appended 
 - Told that a video exists but is not shown (T_told), it abstains as often as with the question only (62%), but mostly
   across the board rather than where the video matters.
 - Self-report does not register the video: asked what it used, the model names a video in 6.5% of cases with its own
-  video, and 9.2% with no video at all (question only, Q_noE). The explanations are not coded yet (keyword screens only).
-- Slides: [slides/decks/2026-10-19_full_run.pptx](slides/decks/2026-10-19_full_run.pptx); all numbers in
-  [notebook 06](notebooks/06_2026-10-18_full_shuffled.ipynb), including its "Additional tests" section.
+  video, and 9.2% with no video at all (question only, Q_noE); it claims a transcript in 36% with none.
+- The explanations (both judges agree; kappa 0.79–0.98): with a video from a different film the model cites things seen
+  about as often as with the right one (15.2% vs 16.4%), and no explanation notices the mismatch; with no video at all,
+  6.9% cite things seen; told that a video exists, 7.9% name the missing video.
+- Slides: [slides/decks/2026-10-19_full_run.pptx](slides/decks/2026-10-19_full_run.pptx),
+  [slides/decks/2026-10-25_final_coding.pptx](slides/decks/2026-10-25_final_coding.pptx) and the summary
+  [slides/decks/2026-10-19_summary.pptx](slides/decks/2026-10-19_summary.pptx); numbers in
+  [notebook 06](notebooks/06_2026-10-18_full_shuffled.ipynb) (including its "Additional tests" section) and
+  [notebook 07](notebooks/07_2026-10-19_code_explanations.ipynb).
 
 ## Files
 
@@ -59,8 +67,11 @@ notebooks/
   04_2026-09-28_pilot_run.ipynb pilot run + analysis
   05_2026-10-04_...ipynb        abstention / mismatch / explanations run + analysis
   06_2026-10-18_...ipynb        full run: shuffled options, two follow-up branches (GPU) + analysis
+  07_2026-10-19_...ipynb        explanation coding with two LLM judges + agreement and codes by condition
+  08_2026-10-25_...ipynb        as 06 with InternVL2.5-8B
 src/
   qwen_omni.py                  model loading, frame sampling, prompt building, letter scoring, text generation
+  internvl.py                   the same for InternVL2.5-8B (same prompts and frames)
   video_alignment.py            transcript-video sync check (used by notebook 01)
 configs/                        one TOML per experiment: model revision, frames, prompt texts
 outputs/<date>_<experiment>/    results.jsonl, figures/, other run outputs
@@ -86,4 +97,5 @@ explanations and saved notebook tables are key-free; only aggregate scores use t
 Python 3.12. `pip install -r requirements.txt`. The model (~18 GB RAM) runs on the GPU when there is one, otherwise on
 CPU, where a question with video takes about 1–3 minutes, depending on the experiment. Experiment 06 (598 questions,
 6 conditions, native-resolution frames) took 4.3 hours on one NVIDIA L40S (46 GB): about 1 s per text condition and
-11 s per video condition.
+11 s per video condition. Notebook 07 needs `OPENROUTER_API_KEY` in a git-ignored `.env`; a full judge run costs
+about $1.90.

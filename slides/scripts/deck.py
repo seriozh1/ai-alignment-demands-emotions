@@ -1,23 +1,18 @@
-"""Helpers for building meeting slides from the deck template in files/ (keeps its theme and layouts).
-
-Personal tooling for presentations, not part of the experiment code.
-"""
+"""Meeting slides from the deck template in files/ (its theme and layouts)."""
 from pathlib import Path
 
 from pptx import Presentation
 from pptx.enum.dml import MSO_THEME_COLOR
 from pptx.util import Pt
 
-ROOT = Path(__file__).resolve().parents[2]  # slides/scripts/deck.py -> repo root
+ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE = ROOT / "files/AI Alignemnt Emotions all slides.pptx"
 
-# positions taken from the template's own slides (EMU)
 LEFT, WIDTH = 311700, 8520600
 BODY_TOP = 1152475
 
 
 def set_text(shape, text, level=0, new_paragraph=False):
-    """Write text in the theme's black (dk1), like the template's own slides; the layout default is gray."""
     tf = shape.text_frame
     p = tf.add_paragraph() if new_paragraph else tf.paragraphs[0]
     p.text, p.level = text, level
@@ -26,7 +21,6 @@ def set_text(shape, text, level=0, new_paragraph=False):
 
 
 def new_deck(template=TEMPLATE):
-    """The template with all its slides removed: same theme and layouts, empty deck."""
     prs = Presentation(template)
     slide_ids = prs.slides._sldIdLst
     for slide_id in list(slide_ids):
@@ -36,22 +30,15 @@ def new_deck(template=TEMPLATE):
 
 
 def title_slide(prs, title, date):
-    s = prs.slides.add_slide(prs.slide_layouts[0])  # TITLE
+    s = prs.slides.add_slide(prs.slide_layouts[0])
     set_text(s.placeholders[0], title)
     set_text(s.placeholders[1], date)
     return s
 
 
 def slide(prs, title, bullets, figure=None, layout="below", body_height=1050000):
-    """Title + bullets, optionally with a figure.
-
-    bullets: list of str, or (level, str) for sub-bullets.
-    figure: image path relative to the repo root.
-    layout: "below" = text on top, figure under it (keep bullets to one line each);
-            "right" = text in a left column, figure on the right.
-    body_height: height of the text box for layout="below"; the figure fills the space under it.
-    """
-    s = prs.slides.add_slide(prs.slide_layouts[2])  # TITLE_AND_BODY
+    """layout="below": bullets longer than one line run under the figure; "right": figure on the right."""
+    s = prs.slides.add_slide(prs.slide_layouts[2])
     set_text(s.placeholders[0], title)
     body = s.placeholders[1]
     for i, b in enumerate(bullets):
@@ -76,8 +63,7 @@ def slide(prs, title, bullets, figure=None, layout="below", body_height=1050000)
 
 
 def table_slide(prs, title, header, rows, bullets=(), body_height=600000, font_size=12):
-    """Title, optional bullets, and a table under them (header row + rows of strings), in the template's table style."""
-    s = prs.slides.add_slide(prs.slide_layouts[2])  # TITLE_AND_BODY
+    s = prs.slides.add_slide(prs.slide_layouts[2])
     set_text(s.placeholders[0], title)
     body = s.placeholders[1]
     if bullets:

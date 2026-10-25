@@ -1,32 +1,20 @@
-"""Qwen2.5-Omni-7B helpers: load the model, read video frames, build the prompt, score answer letters, explain.
-
-Only the Thinker (the text-producing part) is loaded. Audio is never given to the model.
-"""
+"""Qwen2.5-Omni-7B, Thinker only and no audio: frames, prompts, letter scores, explanations."""
 import os
 
-# GPU memory: let PyTorch grow its reserved blocks instead of keeping many blocks of slightly different sizes (prompts
-# with video differ in length), which can fill the card; must be set before the first GPU use
-os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")  # keeps reserved GPU memory from piling up
 import torch
 
-# Qwen's reader prefers torchcodec when it is installed; all runs so far used decord, so keep the same frames everywhere
-os.environ.setdefault("FORCE_QWENVL_VIDEO_READER", "decord")
-from qwen_omni_utils.v2_5.vision_process import fetch_video  # Qwen's official video reader (uses decord)
+os.environ.setdefault("FORCE_QWENVL_VIDEO_READER", "decord")  # same frames as all runs so far
+from qwen_omni_utils.v2_5.vision_process import fetch_video
 from transformers import Qwen2_5OmniProcessor, Qwen2_5OmniThinkerForConditionalGeneration
 
 MODEL_ID = "Qwen/Qwen2.5-Omni-7B"
 LETTERS = ["A", "B", "C", "D"]
-SYSTEM_PROMPT = "You are a helpful assistant."  # Qwen's default system prompt
+SYSTEM_PROMPT = "You are a helpful assistant."  # Qwen's default
 
 
 def build_prompt(question, with_transcript=True, option_e=None, order=None):
-    """User text for one question (a row of questions.parquet). Identical in T and VT; VT only adds the video.
-
-    with_transcript=False drops the transcript block (question-only condition).
-    option_e (text) adds a fifth option "E. <option_e>" after A-D.
-    order (original letters in display order, e.g. ["C", "E", "A", "D", "B"]) shows the options in that order,
-    relabelled A, B, C, ...; None keeps A-D, then E.
-    """
+    """order: original letters in display order, e.g. ["C", "E", "A", "D", "B"]; None = A-D, then E."""
     texts = {letter: question["option_" + letter].strip() for letter in LETTERS}
     if option_e is not None:
         texts["E"] = option_e
@@ -41,11 +29,7 @@ def build_prompt(question, with_transcript=True, option_e=None, order=None):
 
 
 class LastPositionHead(torch.nn.Module):
-    """The output layer applied to the last position only.
-
-    The model computes next-token scores for every position (152k-word vocabulary each), several GB for a video prompt,
-    but scoring and greedy generation only read the last position, so its scores are unchanged.
-    """
+    """Output layer on the last position only: same scores, without GBs of unused scores for video prompts."""
 
     def __init__(self, head):
         super().__init__()
@@ -67,10 +51,6 @@ def load(revision):
 
 
 def sample_frames(video_path, t_start, t_end, n_frames, max_pixels=None):
-    """n_frames evenly spaced frames between t_start and t_end (seconds), read and resized by Qwen's own code.
-
-    Returns (frames [T, 3, H, W], sampling fps). max_pixels=None uses Qwen's default frame size.
-    """
     video = {"video": str(video_path), "video_start": t_start, "video_end": t_end, "nframes": n_frames}
     if max_pixels is not None:
         video["max_pixels"] = max_pixels
@@ -78,12 +58,7 @@ def sample_frames(video_path, t_start, t_end, n_frames, max_pixels=None):
 
 
 def make_inputs(processor, system_text, user_text, frames=None, fps=None, followup=None):
-    """Build the chat prompt and turn it into model inputs.
-
-    system_text=None sends no system message; the chat template then adds Qwen's default "You are a helpful assistant."
-    frames=None gives the T condition (text only); passing frames (and fps) from sample_frames gives VT.
-    followup=(assistant_text, user_text) appends the model's answer and a second user turn (for explanations).
-    """
+    """followup=(assistant_text, user_text) adds the model's answer and a second user turn."""
     content = [{"type": "text", "text": user_text}]
     if frames is not None:
         content = [{"type": "video"}] + content
@@ -99,20 +74,18 @@ def make_inputs(processor, system_text, user_text, frames=None, fps=None, follow
 
     if frames is None:
         return processor(text=prompt, return_tensors="pt"), prompt
-    # Frames are already resized by sample_frames; cap_pixels_per_frame=True (Qwen's reference behavior) changes nothing for them
     return processor(text=prompt, videos=[frames], fps=fps, cap_pixels_per_frame=True, return_tensors="pt"), prompt
 
 
 @torch.inference_mode()
 def score_options(model, processor, inputs, letters=LETTERS):
-    """Probability the model gives to each answer letter as its next token."""
     letter_ids = [processor.tokenizer.convert_tokens_to_ids(letter) for letter in letters]
     inputs = inputs.to(model.device)
-    logits = model(**inputs).logits[0, -1].float()  # scores for the next token after the prompt
+    logits = model(**inputs).logits[0, -1].float()
     logprobs = torch.log_softmax(logits, dim=-1)[letter_ids]
     return {
-        "prob": torch.softmax(logprobs, dim=0).tolist(),  # renormalized over the letters, sums to 1
-        "mass_on_letters": logprobs.exp().sum().item(),  # share of ALL next-token probability that went to the letters
+        "prob": torch.softmax(logprobs, dim=0).tolist(),  # renormalized over the letters
+        "mass_on_letters": logprobs.exp().sum().item(),  # share of all next-token probability on the letters
         "logprob": logprobs.tolist(),
         "n_input_tokens": inputs["input_ids"].shape[1],
     }
@@ -120,7 +93,6 @@ def score_options(model, processor, inputs, letters=LETTERS):
 
 @torch.inference_mode()
 def generate_text(model, processor, inputs, max_new_tokens):
-    """Greedy (deterministic) text continuation of the prompt, stopping at the end of the assistant turn."""
     end_id = processor.tokenizer.convert_tokens_to_ids("<|im_end|>")
     inputs = inputs.to(model.device)
     out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False, eos_token_id=end_id, pad_token_id=end_id)

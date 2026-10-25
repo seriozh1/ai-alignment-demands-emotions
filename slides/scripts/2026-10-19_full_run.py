@@ -1,13 +1,8 @@
-"""Slides for 2026-10-19: experiment 2026-10-18 (full run, 598 questions, GPU). Numbers come from notebook 06,
-including its "Additional tests" section.
-
-Run from the repo root:  python slides/scripts/2026-10-19_full_run.py
-add_slides() is also used to insert the same slides into the deck in files/ (after its "Full run" title slide).
-"""
+"""Run from the repo root: python slides/scripts/2026-10-19_full_run.py"""
 from deck import ROOT, new_deck, slide, table_slide, title_slide
 
 FIG = "outputs/2026-10-18_full_shuffled/figures"
-OUT = ROOT / "slides/decks/2026-10-19_full_run.pptx"  # same name as this script
+OUT = ROOT / "slides/decks/2026-10-19_full_run.pptx"
 
 
 def add_slides(prs):

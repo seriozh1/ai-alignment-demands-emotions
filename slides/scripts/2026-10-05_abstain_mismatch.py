@@ -1,13 +1,9 @@
-"""Slides for the 2026-10-05 meeting: experiment 2026-10-04 (abstention, question-only floor, mismatched video,
-explanations). Numbers are from the first 87 questions; update them if the run grows.
-
-Run from the repo root:  python slides/scripts/2026-10-05_abstain_mismatch.py
-"""
+"""Run from the repo root: python slides/scripts/2026-10-05_abstain_mismatch.py"""
 from deck import ROOT, new_deck, slide, title_slide
 
 FIG = "outputs/2026-10-04_abstain_mismatch_explain/figures"
 PILOT = "outputs/2026-09-28_pilot/figures"
-OUT = ROOT / "slides/decks/2026-10-05_abstain_mismatch.pptx"  # same name as this script
+OUT = ROOT / "slides/decks/2026-10-05_abstain_mismatch.pptx"
 
 prs = new_deck()
 
