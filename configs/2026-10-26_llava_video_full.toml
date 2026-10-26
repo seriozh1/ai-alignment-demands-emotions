@@ -1,0 +1,26 @@
+# Experiment 2026-10-26: experiment 2026-10-18_full_shuffled with LLaVA-Video-7B-Qwen2, a video model evaluated in the
+# MoMentS paper, in its community transformers conversion (Isotr0py/LLaVA-Video-7B-Qwen2-hf). Everything except the model
+# is as in 2026-10-18.
+# Run by notebooks/14_2026-10-26_llava_video_full.ipynb; results go to outputs/<experiment>/.
+experiment = "2026-10-26_llava_video_full"
+
+model_id = "Isotr0py/LLaVA-Video-7B-Qwen2-hf"
+model_revision = "dd870444ff8b5140a5166aab17be29629c96ea20"
+
+n_frames = 64
+max_pixels = 602112  # the same frames as for the other models; the processor resizes each to 384x384
+
+conditions = ["Q_noE", "Q", "T", "T_told", "VT", "VTmis"]
+option_e = "Cannot tell from the given information."
+told_note = "A video of this scene exists, but it is not shown to you."
+shuffle_seed = 0
+
+explain_prompt = "Explain in one sentence which information you based your answer on."
+explain_max_new_tokens = 200
+evidence_question = "Besides the question and its options, what did you base your answer on?"
+
+[evidence_options]
+nothing = "Nothing else"
+transcript = "A transcript"
+video = "A video"
+both = "Both a transcript and a video"
