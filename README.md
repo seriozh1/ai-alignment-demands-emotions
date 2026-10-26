@@ -36,6 +36,9 @@ four-option evidence question (nothing else / a transcript / a video / both). Ex
 | 2026-10-25 | As 06 with a second model, InternVL2.5-8B (the only non-Qwen open model in the MoMentS paper) | [08](notebooks/08_2026-10-25_internvl_full.ipynb) | [config](configs/2026-10-25_internvl_full.toml) | [outputs](outputs/2026-10-25_internvl_full/) |
 | 2026-10-25 | Coding of 08's explanations, as 07 (same judges and prompt) | [09](notebooks/09_2026-10-25_code_explanations_internvl.ipynb) | [config](configs/2026-10-25_code_explanations_internvl.toml) | [outputs](outputs/2026-10-25_code_explanations_internvl/) |
 | 2026-10-25 | Qwen vs InternVL: behavior, evidence question, explanation codes (no model needed) | [10](notebooks/10_2026-10-25_compare_models.ipynb) | - | [outputs](outputs/2026-10-25_compare_models/) |
+| 2026-10-25 | As 06 with a third model, Qwen2.5-VL-7B-Instruct (MoMentS paper) | [11](notebooks/11_2026-10-25_qwen25vl_full.ipynb) | [config](configs/2026-10-25_qwen25vl_full.toml) | [outputs](outputs/2026-10-25_qwen25vl_full/) |
+| 2026-10-26 | Coding of 11's explanations, as 07 (same judges and prompt) | [12](notebooks/12_2026-10-26_code_explanations_qwen25vl.ipynb) | [config](configs/2026-10-26_code_explanations_qwen25vl.toml) | [outputs](outputs/2026-10-26_code_explanations_qwen25vl/) |
+| 2026-10-26 | Qwen-Omni vs InternVL vs Qwen-VL, as 10 (no model needed) | [13](notebooks/13_2026-10-26_compare_three_models.ipynb) | - | [outputs](outputs/2026-10-26_compare_three_models/) |
 
 Each experiment notebook ends with its analysis and plots. Results are appended to `results.jsonl` one row per
 (question, condition), so a run can be stopped and resumed, or extended with more questions.
@@ -70,6 +73,18 @@ Each experiment notebook ends with its analysis and plots. Results are appended 
   with none; its explanations cite things seen in 34%, 24% and 14%.
 - Judges agree as for Qwen (kappa 0.73–0.99). Numbers in [notebook 10](notebooks/10_2026-10-25_compare_models.ipynb).
 
+## Third model (experiments 11–13, Qwen2.5-VL-7B)
+
+- Most cautious without a video (abstains 97% question only, 82% transcript, 87% T_told), 33% with the video; the
+  wrong film's video raises it to 66% (211 start, 15 stop), the strongest reaction of the three models.
+- Its best A–D answer is right less often with the wrong video (59.7% to 51.0%, p < 0.001), as for the other two.
+- Says it used a video in 94% with its own video and still 63% with the wrong one.
+- First model whose explanations sometimes say the frames do not show what the question is about (wrong video: 4 of 598
+  by both judges, 13 by either); none say the clip is from another film. 34 wrong-video explanations mention "audio",
+  which is never given.
+- Judges agree (kappa 0.74–0.99; `notices_mismatch` 0.47, rare). Numbers in
+  [notebook 13](notebooks/13_2026-10-26_compare_three_models.ipynb).
+
 ## Files
 
 ```
@@ -84,9 +99,13 @@ notebooks/
   08_2026-10-25_...ipynb        as 06 with InternVL2.5-8B
   09_2026-10-25_...ipynb        as 07 for 08's explanations
   10_2026-10-25_...ipynb        Qwen vs InternVL comparison (tables and figures)
+  11_2026-10-25_...ipynb        as 06 with Qwen2.5-VL-7B
+  12_2026-10-26_...ipynb        as 07 for 11's explanations
+  13_2026-10-26_...ipynb        three-model comparison (tables and figures)
 src/
   qwen_omni.py                  model loading, frame sampling, prompt building, letter scoring, text generation
   internvl.py                   the same for InternVL2.5-8B (same prompts and frames)
+  qwen_vl.py                    the same for Qwen2.5-VL-7B
   video_alignment.py            transcript-video sync check (used by notebook 01)
 configs/                        one TOML per experiment: model revision, frames, prompt texts
 outputs/<date>_<experiment>/    results.jsonl, figures/, other run outputs

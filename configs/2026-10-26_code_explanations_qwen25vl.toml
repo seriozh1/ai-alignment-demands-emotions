@@ -1,0 +1,56 @@
+# Coding 2026-10-26: the free-form explanations of experiment 2026-10-25_qwen25vl_full (Qwen2.5-VL-7B) with the same
+# judges, codebook and prompt as 2026-10-19_code_explanations (Qwen2.5-Omni), so the codes are comparable. Run by
+# notebooks/12_2026-10-26_code_explanations_qwen25vl.ipynb; results go to outputs/<experiment>/.
+experiment = "2026-10-26_code_explanations_qwen25vl"
+source_experiment = "2026-10-25_qwen25vl_full"
+
+# Judges through OpenRouter (OpenAI-compatible API); the key is read from OPENROUTER_API_KEY (.env, not in git).
+# Both run on every explanation; how their disagreements are resolved is decided after inspecting the results.
+# Reasoning is on at medium effort (both judges), so they can check visual details against the question and options.
+# No temperature is sent: neither model accepts it on OpenRouter, which would silently drop it. Outputs are therefore
+# not guaranteed to be deterministic; the saved labels, model names and prompt hash are the record. Luna also gets
+# `seed` (best effort); Haiku does not accept it.
+api_base_url = "https://openrouter.ai/api/v1"
+judge_models = ["anthropic/claude-haiku-5.5", "openai/gpt-6-luna"]  # both $0.10 / $0.50 per million tokens
+seed_models = ["openai/gpt-6-luna"]  # models that are sent `seed`
+reasoning_effort = "medium"
+max_tokens = 4000  # safety cap; includes the reasoning tokens
+n_workers = 8  # parallel requests
+
+# The hand-check (what the human codes) is decided after inspecting the judges' results.
+seed = 0  # generation seed for seed_models
+
+# The five judged codes, in this order: name = definition. The same text is shown to the judges and the human coder.
+[codes]
+cites_dialogue = "The explanation quotes or paraphrases what a character says, or refers to a transcript as something the model had (for example \"the transcript says ...\" or \"the transcript does not mention ...\"). Subtitles and captions count as a transcript. Saying only that there is no dialogue, or that no transcript was provided, without referring to a transcript the model had, is NOT this code. Do not count speech that only repeats the wording of the question or of any answer option."
+cites_visual = "The explanation uses something seen as a basis: facial expression, smile, look or gaze, gesture, posture, body language, visible actions, appearance or setting, or it refers to a video, image, frames or what the scene shows. Do not count visual details that only repeat the wording of the question or of any answer option. Do not count visual information the explanation says it did not have."
+says_insufficient = "The explanation says that some information is missing, insufficient, or does not allow the answer to be determined, even if the model still gave an answer (for example \"there is no dialogue to indicate his feelings\")."
+names_missing_visual = "The explanation says specifically that visual information (a video, images, facial expressions, body language) is not available or would be needed."
+notices_mismatch = "The explanation says that what is seen (a video, images, frames) does not fit the dialogue, the question or the characters described."
+
+[prompts]
+system = """You code short explanations written by an AI model. The model answered a multiple-choice question about a person's emotions in a scene from a short film, and was then asked: "Explain in one sentence which information you based your answer on." You are not told what input the model had (it may or may not have had a transcript or a video).
+
+Code only what the explanation itself claims, not whether the claim is true or the answer is right. Apply each code independently; several or none can apply.
+
+Codes:
+{codes}
+
+Examples (invented):
+1. "Her smile while saying 'I'm fine' suggests she is hiding sadness." -> cites_dialogue, cites_visual
+2. "The answer is based on the context provided in the question, which states that the man bought her a puppy to cheer her up." -> none of the codes
+3. "The man expresses fear that there might not be anyone inside." (the chosen option, repeated) -> none of the codes
+4. "No transcript or dialogue was provided, so her feelings cannot be determined." -> says_insufficient only (not cites_dialogue)
+5. "The transcript does not describe her facial expression, so her feelings cannot be determined." -> cites_dialogue, says_insufficient, names_missing_visual (not cites_visual)
+6. Question "How does the man feel when the girl leans her head on his shoulder?": the explanation "The girl leaning on his shoulder shows affection, so he feels comforted." -> none of the codes (the visual detail is the question's wording); the explanation "His stiff posture and the way he looks away suggest discomfort." -> cites_visual
+7. "The people in the video do not match the conversation in the transcript." -> cites_dialogue, cites_visual, notices_mismatch
+8. Question "Why does the woman say 'not yet'?": the explanation "Her words 'not yet' show she is hesitant." -> none of the codes (the speech is the question's wording); the explanation "She tells him earlier that she is afraid of the water." -> cites_dialogue
+
+In the rationale (one or two sentences), name each visual detail and each piece of speech the explanation uses and say whether it appears in the question or in any option; count cites_visual and cites_dialogue only for details that do not. Then give the five codes as true/false."""
+
+item = """Question: {question}
+Options as shown to the model:
+{options}
+
+The model's answer: {answer}
+The model's explanation: "{explanation}\""""
