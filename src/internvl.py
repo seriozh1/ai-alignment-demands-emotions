@@ -1,11 +1,11 @@
-"""InternVL2.5-8B (MPO, native transformers): same interface as qwen_omni, same prompts and frames."""
+"""InternVL2.5-8B (MPO, native transformers): shared prompts and frames from common; own scoring."""
 import os
 
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import torch
 from transformers import AutoProcessor, InternVLForConditionalGeneration
 
-from qwen_omni import LETTERS, build_prompt, sample_frames  # noqa: F401
+from common import LETTERS, build_prompt, sample_frames  # noqa: F401
 
 MODEL_ID = "OpenGVLab/InternVL2_5-8B-MPO-hf"
 END = "<|im_end|>"

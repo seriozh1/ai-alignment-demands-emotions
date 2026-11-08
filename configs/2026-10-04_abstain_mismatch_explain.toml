@@ -1,12 +1,12 @@
 # Experiment 2026-10-04: question-only floor, explicit abstention (option E), mismatched video, explanations.
-# Run by notebooks/05_2026-10-04_abstain_mismatch_explain.ipynb; results go to outputs/<experiment>/.
+# Run by notebooks/pilot_2026-10-04_abstain_mismatch_explain.ipynb; results go to outputs/<experiment>/.
 experiment = "2026-10-04_abstain_mismatch_explain"
 
 model_id = "Qwen/Qwen2.5-Omni-7B"
 model_revision = "ae9e1690543ffd5c0221dc27f79834d0294cba00"  # same pinned commit as the pilot
 device = "cpu"
 
-n_frames = 64  # as in the pilot and the MoMentS paper (fewer for the 6 short clips, see notebook 03)
+n_frames = 64  # as in the pilot and the MoMentS paper (fewer for the 6 short clips, see notebooks/select_questions.ipynb)
 max_pixels = 125440  # 448x252 frames, same as the pilot
 
 # Conditions, run in this order for each question:

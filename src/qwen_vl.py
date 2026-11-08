@@ -1,11 +1,11 @@
-"""Qwen2.5-VL-7B-Instruct: same interface, prompts, frames and scoring as qwen_omni."""
+"""Qwen2.5-VL-7B-Instruct: shared prompts, frames and scoring from common."""
 import os
 
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import torch
 from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
-from qwen_omni import LETTERS, LastPositionHead, build_prompt, generate_text, sample_frames, score_options  # noqa: F401
+from common import LETTERS, LastPositionHead, build_prompt, generate_text, sample_frames, score_options  # noqa: F401
 
 MODEL_ID = "Qwen/Qwen2.5-VL-7B-Instruct"
 
@@ -20,7 +20,7 @@ def load(revision):
 
 
 def make_inputs(processor, system_text, user_text, frames=None, fps=None, followup=None):
-    """As qwen_omni.make_inputs; the frame rate goes in as video metadata (this processor ignores fps=)."""
+    """As common.make_inputs; the frame rate goes in as video metadata (this processor ignores fps=)."""
     content = [{"type": "text", "text": user_text}]
     if frames is not None:
         content = [{"type": "video"}] + content

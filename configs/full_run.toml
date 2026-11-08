@@ -1,0 +1,42 @@
+# The full run, the same for every model: frames, conditions, prompts, option order and follow-up questions.
+# Used by notebooks/run_model.ipynb with one model from configs/models.toml; results go to outputs/<model>/.
+# First used 2026-10-18 (Qwen2.5-Omni-7B); it extends the 2026-10-04 pilot to all 598 questions, on a GPU, with the
+# options in a random order, the T_told condition and two follow-up questions.
+
+n_frames = 64  # as in the pilots and the MoMentS paper (fewer for the 6 short clips, see notebooks/select_questions.ipynb)
+max_pixels = 602112  # cap when decoding frames (Qwen's default, 768 tokens per frame); above every source video
+                     # (640x360 or 854x480), so frames keep their native resolution. Each model's processor may
+                     # resize them further (see configs/models.toml). The pilots used 125440 (448x252) on CPU.
+
+# Conditions, run in this order for each question:
+#   Q_noE : question + options A-D                       (floor, comparable to the pilot's T/VT)
+#   Q     : question + options A-E
+#   T     : transcript + question + options A-E
+#   T_told: told_note + T (the model is told a video exists but is not shown)
+#   VT    : T + 64 silent frames of the question's own clip
+#   VTmis : T + 64 silent frames of a clip from a different film (fixed pairing, closest clip length)
+conditions = ["Q_noE", "Q", "T", "T_told", "VT", "VTmis"]
+option_e = "Cannot tell from the given information."
+told_note = "A video of this scene exists, but it is not shown to you."  # T_told only, before the transcript; factual, no instruction
+
+# Option order (position-bias control): each question gets one random order of its five options, "Cannot tell"
+# included, seeded by shuffle_seed and the question id. The same order is used in every condition (Q_noE: the same
+# order without "Cannot tell"), so conditions differ only in the evidence.
+shuffle_seed = 0
+
+# After the answer, two separate follow-ups (branches): each is the same chat (prompt + the model's own top letter)
+# plus one question, and neither sees the other.
+#   A) free-form explanation, greedy decoding
+explain_prompt = "Explain in one sentence which information you based your answer on."
+explain_max_new_tokens = 200  # safety cap only; a one-sentence answer stays far below it
+#   B) evidence question, scored like the answer (letter probabilities). Identical in every condition, so the
+#      conditions can be compared; the options cover every combination of the inputs that vary (the question is
+#      always given). Shown in a random order per question (seeded by shuffle_seed and the question id), the same
+#      order in every condition.
+evidence_question = "Besides the question and its options, what did you base your answer on?"
+
+[evidence_options]  # key: stored name; value: option text
+nothing = "Nothing else"
+transcript = "A transcript"
+video = "A video"
+both = "Both a transcript and a video"

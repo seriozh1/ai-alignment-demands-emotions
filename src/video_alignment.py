@@ -1,4 +1,4 @@
-"""Transcript-video alignment check for notebook 01 (a .py file so it runs in worker processes)."""
+"""Transcript-video alignment check for notebooks/data_preprocessing.ipynb (a .py file so it runs in worker processes)."""
 import av
 import numpy as np
 

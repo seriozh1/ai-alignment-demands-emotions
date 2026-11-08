@@ -7,8 +7,8 @@ to infer emotions? For example, when the answer depends on a face, does a transc
 given the video?
 
 **Setup:** [MoMentS](https://github.com/villacu/MoMentS) (short films with multiple-choice theory-of-mind questions),
-Emotions category only (598 questions, 153 films). Model: Qwen2.5-Omni-7B, the text-producing part only, with no audio.
-Confidence is the probability of each answer letter as the model's next token. Abstention is a fifth option,
+Emotions category only (598 questions, 153 films). Models: five open vision-language models (see [Runs](#runs)), with
+no audio. Confidence is the probability of each answer letter as the model's next token. Abstention is a fifth option,
 "E. Cannot tell from the given information."
 
 | Condition | Model input |
@@ -16,38 +16,57 @@ Confidence is the probability of each answer letter as the model's next token. A
 | Q_noE | question + options A–D |
 | Q | question + options A–E |
 | T | transcript + question + options |
-| T_told | "A video of this scene exists, but it is not shown to you." + T (from experiment 06) |
+| T_told | "A video of this scene exists, but it is not shown to you." + T (full runs only) |
 | VT | T + 64 silent frames of the clip |
 | VTmis | T + 64 silent frames of a clip from a different film |
 
-From experiment 06 the options are shown in a random order per question (the same in every condition), and after the
-answer the model gets two separate follow-up questions: a free-form explanation of the information it used, and a
-four-option evidence question (nothing else / a transcript / a video / both). Exact texts are in the
-[config](configs/2026-10-18_full_shuffled.toml).
+In the full runs the options are shown in a random order per question (the same in every condition and for every
+model), and after the answer the model gets two separate follow-up questions: a free-form explanation of the
+information it used, and a four-option evidence question (nothing else / a transcript / a video / both). Exact texts
+are in [configs/full_run.toml](configs/full_run.toml).
 
-## Experiments
+## How to run
 
-| Date | Experiment | Notebook | Config | Results |
+1. Data: `data_preprocessing.ipynb`, then `select_questions.ipynb`.
+2. Run a model: `run_model.ipynb` with `MODEL` set to its name in `configs/models.toml` (GPU).
+3. Code its explanations: `code_explanations.ipynb` with the same `MODEL` (OpenRouter).
+4. Compare: `compare_models.ipynb`; it includes every model with results and codes in `outputs/<model>/`.
+
+Configs: [full_run.toml](configs/full_run.toml) (frames, conditions, prompts; the same for every model),
+[models.toml](configs/models.toml) (one entry per model: name, pinned revision, `src/` module) and
+[judges.toml](configs/judges.toml) (judges, codes, prompt). To add a model: an entry in `models.toml` and a
+`src/<module>.py` that provides the same functions as the others (`load`, `build_prompt`, `sample_frames`,
+`make_inputs`, `score_options`, `generate_text`), taking from `src/common.py` whatever it does not change. A model that needs a different procedure (other conditions, audio, an older software
+environment) gets its own notebook.
+
+## Runs
+
+One folder per model in `outputs/`, with `results.jsonl` (one row per question and condition), `explanations.csv`,
+the judges' `judge_labels.jsonl`, `agreement.csv` and `codes_by_condition.csv`.
+
+| Date | Model | Outputs |
+|---|---|---|
+| 2026-10-18 | Qwen2.5-Omni-7B (text-producing part only) | [outputs/qwen2.5-omni-7b](outputs/qwen2.5-omni-7b/) |
+| 2026-10-25 | InternVL2.5-8B (`OpenGVLab/InternVL2_5-8B-MPO-hf`, the only non-Qwen open model in the MoMentS paper) | [outputs/internvl2.5-8b](outputs/internvl2.5-8b/) |
+| 2026-10-25 | Qwen2.5-VL-7B-Instruct (MoMentS paper) | [outputs/qwen2.5-vl-7b](outputs/qwen2.5-vl-7b/) |
+| 2026-10-26 | LLaVA-Video-7B-Qwen2 (MoMentS paper; community transformers conversion `Isotr0py/LLaVA-Video-7B-Qwen2-hf`) | [outputs/llava-video-7b](outputs/llava-video-7b/) |
+| 2026-11-08 | Gemma 4 12B (`google/gemma-4-12B-it`, thinking off; a recent model from a non-Qwen family) | running |
+
+All full runs: 598 questions, six conditions, the same prompts, frames and option orders. The Qwen2.5-Omni folder also
+has `judge_labels_v1.jsonl`, an earlier coding run before `cites_dialogue` excluded speech repeated from the question.
+The comparison of all models is in [outputs/compare_models/](outputs/compare_models/); which question gets which
+wrong film (VTmis) is in [outputs/mismatch_pairs.csv](outputs/mismatch_pairs.csv), the same for every model.
+
+Pilots, with Qwen2.5-Omni-7B (each notebook runs and analyses its own experiment):
+
+| Date | Pilot | Notebook | Config | Results |
 |---|---|---|---|---|
-| 2026-09-28 | Pilot: T vs VT, options A–D | [04](notebooks/04_2026-09-28_pilot_run.ipynb) | [config](configs/2026-09-28_pilot.toml) | [outputs](outputs/2026-09-28_pilot/) |
-| 2026-10-04 | Abstention (option E), question-only floor, mismatched video, one-sentence explanations | [05](notebooks/05_2026-10-04_abstain_mismatch_explain.ipynb) | [config](configs/2026-10-04_abstain_mismatch_explain.toml) | [outputs](outputs/2026-10-04_abstain_mismatch_explain/) |
-| 2026-10-18 | As 05, all 598 questions, options in a random order (position-bias control), native-resolution frames, new condition T_told (told a video exists but is not shown), two follow-up branches (free-form explanation, evidence question), on a GPU | [06](notebooks/06_2026-10-18_full_shuffled.ipynb) | [config](configs/2026-10-18_full_shuffled.toml) | [outputs](outputs/2026-10-18_full_shuffled/) |
-| 2026-10-19 | Coding of 06's free-form explanations: five yes/no codes, two LLM judges (Claude Haiku 5.5, GPT-6 Luna, via OpenRouter); `judge_labels_v1.jsonl` is the first run, before `cites_dialogue` excluded speech repeated from the question | [07](notebooks/07_2026-10-19_code_explanations.ipynb) | [config](configs/2026-10-19_code_explanations.toml) | [outputs](outputs/2026-10-19_code_explanations/) |
-| 2026-10-25 | As 06 with a second model, InternVL2.5-8B (the only non-Qwen open model in the MoMentS paper) | [08](notebooks/08_2026-10-25_internvl_full.ipynb) | [config](configs/2026-10-25_internvl_full.toml) | [outputs](outputs/2026-10-25_internvl_full/) |
-| 2026-10-25 | Coding of 08's explanations, as 07 (same judges and prompt) | [09](notebooks/09_2026-10-25_code_explanations_internvl.ipynb) | [config](configs/2026-10-25_code_explanations_internvl.toml) | [outputs](outputs/2026-10-25_code_explanations_internvl/) |
-| 2026-10-25 | Qwen vs InternVL: behavior, evidence question, explanation codes (no model needed) | [10](notebooks/10_2026-10-25_compare_models.ipynb) | - | [outputs](outputs/2026-10-25_compare_models/) |
-| 2026-10-25 | As 06 with a third model, Qwen2.5-VL-7B-Instruct (MoMentS paper) | [11](notebooks/11_2026-10-25_qwen25vl_full.ipynb) | [config](configs/2026-10-25_qwen25vl_full.toml) | [outputs](outputs/2026-10-25_qwen25vl_full/) |
-| 2026-10-26 | Coding of 11's explanations, as 07 (same judges and prompt) | [12](notebooks/12_2026-10-26_code_explanations_qwen25vl.ipynb) | [config](configs/2026-10-26_code_explanations_qwen25vl.toml) | [outputs](outputs/2026-10-26_code_explanations_qwen25vl/) |
-| 2026-10-26 | Qwen-Omni vs InternVL vs Qwen-VL, as 10 (no model needed) | [13](notebooks/13_2026-10-26_compare_three_models.ipynb) | - | [outputs](outputs/2026-10-26_compare_three_models/) |
-| 2026-10-26 | As 06 with a fourth model, LLaVA-Video-7B-Qwen2 (MoMentS paper), in its community transformers conversion `Isotr0py/LLaVA-Video-7B-Qwen2-hf` | [14](notebooks/14_2026-10-26_llava_video_full.ipynb) | [config](configs/2026-10-26_llava_video_full.toml) | [outputs](outputs/2026-10-26_llava_video_full/) |
-| 2026-10-26 | Coding of 14's explanations, as 07 (same judges and prompt) | [15](notebooks/15_2026-10-26_code_explanations_llava_video.ipynb) | [config](configs/2026-10-26_code_explanations_llava_video.toml) | [outputs](outputs/2026-10-26_code_explanations_llava_video/) |
-| 2026-11-08 | As 06 with Gemma 4 12B, a recent model from a non-Qwen family (running) | [16](notebooks/16_2026-11-08_gemma4_full.ipynb) | [config](configs/2026-11-08_gemma4_full.toml) | - |
-| 2026-11-08 | Comparison of all models, as 10 (no model needed; models are added as they finish) | [17](notebooks/17_2026-11-08_compare_models.ipynb) | - | [outputs](outputs/2026-11-08_compare_models/) |
+| 2026-09-28 | T vs VT, options A–D | [notebook](notebooks/pilot_2026-09-28_t_vs_vt.ipynb) | [config](configs/2026-09-28_pilot.toml) | [outputs](outputs/2026-09-28_pilot/) |
+| 2026-10-04 | Abstention (option E), question-only floor, mismatched video, one-sentence explanations | [notebook](notebooks/pilot_2026-10-04_abstain_mismatch_explain.ipynb) | [config](configs/2026-10-04_abstain_mismatch_explain.toml) | [outputs](outputs/2026-10-04_abstain_mismatch_explain/) |
 
-Each experiment notebook ends with its analysis and plots. Results are appended to `results.jsonl` one row per
-(question, condition), so a run can be stopped and resumed, or extended with more questions.
+All numbers below are in [notebooks/compare_models.ipynb](notebooks/compare_models.ipynb).
 
-## Results so far (experiment 06, all 598 questions)
+## Results: Qwen2.5-Omni-7B
 
 - Abstention follows the evidence: question only 62%, transcript 47%, with the video 29%; a video from a different film
   raises it back to 42% (each step p < 0.001, paired).
@@ -63,33 +82,30 @@ Each experiment notebook ends with its analysis and plots. Results are appended 
 - Slides: [slides/decks/2026-10-19_full_run.pptx](slides/decks/2026-10-19_full_run.pptx),
   [slides/decks/2026-10-25_final_coding.pptx](slides/decks/2026-10-25_final_coding.pptx),
   [slides/decks/2026-10-25_second_model.pptx](slides/decks/2026-10-25_second_model.pptx) and the summary
-  [slides/decks/2026-10-19_summary.pptx](slides/decks/2026-10-19_summary.pptx); numbers in
-  [notebook 06](notebooks/06_2026-10-18_full_shuffled.ipynb) (including its "Additional tests" section) and
-  [notebook 07](notebooks/07_2026-10-19_code_explanations.ipynb).
+  [slides/decks/2026-10-19_summary.pptx](slides/decks/2026-10-19_summary.pptx).
 
-## Second model (experiments 08–10, InternVL2.5-8B)
+## Results: InternVL2.5-8B
 
 - Replicates: abstention falls with the transcript (59% to 42%) and the video (14%); told that a video exists, it
   abstains more (54%), again mostly across the board; no explanation notices a video from the wrong film.
-- Differs: with the wrong film's video it abstains barely more (14% to 16%, p = 0.22; Qwen 29% to 42%), although its
-  best A–D answer is right less often (56.4% to 49.0%, p < 0.001; below the transcript alone, 51.2%).
-- It says it used a video far more often than Qwen (63% with its own video), but also 48% with the wrong one and 14%
-  with none; its explanations cite things seen in 34%, 24% and 14%.
-- Judges agree as for Qwen (kappa 0.73–0.99). Numbers in [notebook 10](notebooks/10_2026-10-25_compare_models.ipynb).
+- Differs: with the wrong film's video it abstains barely more (14% to 16%, p = 0.22; Qwen2.5-Omni 29% to 42%),
+  although its best A–D answer is right less often (56.4% to 49.0%, p < 0.001; below the transcript alone, 51.2%).
+- It says it used a video far more often than Qwen2.5-Omni (63% with its own video), but also 48% with the wrong one
+  and 14% with none; its explanations cite things seen in 34%, 24% and 14%.
+- Judges agree (kappa 0.73–0.99).
 
-## Third model (experiments 11–13, Qwen2.5-VL-7B)
+## Results: Qwen2.5-VL-7B
 
 - Most cautious without a video (abstains 97% question only, 82% transcript, 87% T_told), 33% with the video; the
-  wrong film's video raises it to 66% (211 start, 15 stop), the strongest reaction of the three models.
-- Its best A–D answer is right less often with the wrong video (59.7% to 51.0%, p < 0.001), as for the other two.
+  wrong film's video raises it to 66% (211 start, 15 stop), the strongest reaction of the models.
+- Its best A–D answer is right less often with the wrong video (59.7% to 51.0%, p < 0.001), as for the others.
 - Says it used a video in 94% with its own video and still 63% with the wrong one.
 - First model whose explanations sometimes say the frames do not show what the question is about (wrong video: 4 of 598
   by both judges, 13 by either); none say the clip is from another film. 34 wrong-video explanations mention "audio",
   which is never given.
-- Judges agree (kappa 0.74–0.99; `notices_mismatch` 0.47, rare). Numbers in
-  [notebook 13](notebooks/13_2026-10-26_compare_three_models.ipynb).
+- Judges agree (kappa 0.74–0.99; `notices_mismatch` 0.47, rare).
 
-## Fourth model (experiments 14–15, LLaVA-Video-7B)
+## Results: LLaVA-Video-7B
 
 - Abstains least of the four models: 28% question only, 14% with the transcript; the right video changes neither
   abstention (14% to 15%) nor how often the best A–D answer is right (54% both).
@@ -100,60 +116,58 @@ Each experiment notebook ends with its analysis and plots. Results are appended 
 - Says it used a video in 41% with its own video, 32% with the wrong one, and 19% with none (Q_noE); explanations cite
   things seen in 21%, 17% and 6%; none notices the wrong video (the one mismatch flag by both judges is
   with the right video).
-- Judges agree (kappa 0.71–0.98). Numbers for all models in
-  [notebook 17](notebooks/17_2026-11-08_compare_models.ipynb).
+- Judges agree (kappa 0.71–0.98).
 
 ## Files
 
 ```
 notebooks/
-  01_data_preprocessing.ipynb   build the question, transcript and video tables; check transcript-video sync
-  02_model_check.ipynb          load the model, check letter scoring and video timing on one question
-  03_select_questions.ipynb     keep Emotions questions, drop 1 broken clip, fix a random question order
-  04_2026-09-28_pilot_run.ipynb pilot run + analysis
-  05_2026-10-04_...ipynb        abstention / mismatch / explanations run + analysis
-  06_2026-10-18_...ipynb        full run: shuffled options, two follow-up branches (GPU) + analysis
-  07_2026-10-19_...ipynb        explanation coding with two LLM judges + agreement and codes by condition
-  08_2026-10-25_...ipynb        as 06 with InternVL2.5-8B
-  09_2026-10-25_...ipynb        as 07 for 08's explanations
-  10_2026-10-25_...ipynb        Qwen vs InternVL comparison (tables and figures)
-  11_2026-10-25_...ipynb        as 06 with Qwen2.5-VL-7B
-  12_2026-10-26_...ipynb        as 07 for 11's explanations
-  13_2026-10-26_...ipynb        three-model comparison (tables and figures)
-  14_2026-10-26_...ipynb        as 06 with LLaVA-Video-7B
-  15_2026-10-26_...ipynb        as 07 for 14's explanations
-  16_2026-11-08_...ipynb        as 06 with Gemma 4 12B
-  17_2026-11-08_...ipynb        comparison of all models (tables and figures)
+  data_preprocessing.ipynb      build the question, transcript and video tables; check transcript-video sync
+  select_questions.ipynb        keep Emotions questions, drop 1 broken clip, fix a random question order
+  run_model.ipynb               run one model on all questions; GPU
+  code_explanations.ipynb       code one model's explanations with two LLM judges; agreement, codes by condition
+  compare_models.ipynb          all statistics, tables and figures for all models
+  pilot_2026-09-28_t_vs_vt.ipynb                    pilot run + analysis
+  pilot_2026-10-04_abstain_mismatch_explain.ipynb   pilot: abstention / mismatch / explanations + analysis
 src/
-  qwen_omni.py                  model loading, frame sampling, prompt building, letter scoring, text generation
-  internvl.py                   the same for InternVL2.5-8B (same prompts and frames)
-  qwen_vl.py                    the same for Qwen2.5-VL-7B
-  llava_video.py                the same for LLaVA-Video-7B
-  gemma4.py                     the same for Gemma 4 12B
-  video_alignment.py            transcript-video sync check (used by notebook 01)
-configs/                        one TOML per experiment: model revision, frames, prompt texts
-outputs/<date>_<experiment>/    results.jsonl, figures/, other run outputs
+  common.py                     shared by every model: frame sampling, prompts, letter scoring, text generation
+  qwen_omni.py                  Qwen2.5-Omni-7B: loading (the rest from common)
+  internvl.py                   InternVL2.5-8B: loading, inputs, scoring
+  qwen_vl.py                    Qwen2.5-VL-7B: loading, inputs
+  llava_video.py                LLaVA-Video-7B: loading
+  gemma4.py                     Gemma 4 12B: loading, inputs, text generation
+  video_alignment.py            transcript-video sync check (used by data_preprocessing.ipynb)
+configs/
+  full_run.toml                 frames, conditions, prompts, option order: the same for every model
+  models.toml                   one entry per model: name, pinned revision, module
+  judges.toml                   judges, codes, prompt for coding the explanations
+  2026-*_pilot*.toml, ...       the two pilots
+outputs/
+  <model>/                      results, explanations, judge labels, agreement, codes by condition
+  compare_models/               comparison tables and figures
+  mismatch_pairs.csv            the wrong film's clip for each question (VTmis), the same for every model
+  2026-09-28_pilot/, 2026-10-04_.../   the two pilots
 files/                          slides and the MoMentS paper
-slides/                         scripts that build the meeting slides (presentation tooling, not experiment code)
+slides/                         helpers and finished decks for meeting slides (presentation tooling)
 data-private/                   not in git (see below)
 ```
 
 ## Data
 
-`data-private/` is git-ignored. Notebook 01 expects, under `data-private/raw/`:
+`data-private/` is git-ignored. `data_preprocessing.ipynb` expects, under `data-private/raw/`:
 
 - `moments_github/`: the public MoMentS repo (the commit is recorded in `SOURCE.txt`);
 - `moments_questions_v4_test_keys.json`: **private** test answer keys from the MoMentS authors;
 - `all_trimmed_trxs/` and `all_videos/`: transcripts and films from the MoMentS authors.
 
-Notebook 01 writes the processed tables to `data-private/processed/`. Answer keys are kept in a separate table there
-and are loaded only after a run, for analysis. Nothing under `outputs/` stores per-question answer keys (results,
-explanations and saved notebook tables are key-free; only aggregate scores use the keys), so `outputs/` is in git.
+`data_preprocessing.ipynb` writes the processed tables to `data-private/processed/`. Answer keys are kept in a separate
+table there and are loaded only after a run, for analysis. Nothing under `outputs/` stores per-question answer keys
+(results, explanations and saved notebook tables are key-free; only aggregate scores use the keys), so `outputs/` is
+in git.
 
 ## Setup
 
-Python 3.12. `pip install -r requirements.txt`. The model (~18 GB RAM) runs on the GPU when there is one, otherwise on
-CPU, where a question with video takes about 1–3 minutes, depending on the experiment. Experiment 06 (598 questions,
-6 conditions, native-resolution frames) took 4.3 hours on one NVIDIA L40S (46 GB): about 1 s per text condition and
-11 s per video condition. Notebook 07 needs `OPENROUTER_API_KEY` in a git-ignored `.env`; a full judge run costs
-about $1.90.
+Python 3.12. `pip install -r requirements.txt`. The models run on the GPU when there is one, otherwise on CPU, where a
+question with video takes about 1–3 minutes. On one NVIDIA L40S (46 GB) a full run (598 questions, 6 conditions) takes
+3.8–6.4 hours depending on the model (23–39 s per question). `code_explanations.ipynb` needs `OPENROUTER_API_KEY` in a
+git-ignored `.env`; a full judge run costs about $2.

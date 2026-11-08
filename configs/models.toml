@@ -1,0 +1,38 @@
+# The models of the full run, one table each. The table name is the model's name in the notebooks (MODEL = "...")
+# and its outputs folder (outputs/<name>/). Each model runs with configs/full_run.toml through its module in src/
+# (loading, prompts, frames, scoring); the device is the GPU when there is one.
+
+["qwen2.5-omni-7b"]
+label = "Qwen-Omni"  # short name in tables and figures
+model_id = "Qwen/Qwen2.5-Omni-7B"
+model_revision = "ae9e1690543ffd5c0221dc27f79834d0294cba00"  # same pinned commit as the pilots
+module = "qwen_omni"
+note = "Text-producing part (Thinker) only, no audio. Run 2026-10-18."
+
+["internvl2.5-8b"]
+label = "InternVL"
+model_id = "OpenGVLab/InternVL2_5-8B-MPO-hf"
+model_revision = "543db189852edd2dbf0c0395c6afe4159cdc842f"
+module = "internvl"
+note = "InternVL2.5-8B after preference optimization, the native-transformers release; the only non-Qwen open model in the MoMentS paper. Each frame resized to 448x448 (256 tokens). Run 2026-10-25."
+
+["qwen2.5-vl-7b"]
+label = "Qwen-VL"
+model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
+model_revision = "cc594898137f460bfe9f0759e9844b3ce807cfb5"
+module = "qwen_vl"
+note = "Evaluated in the MoMentS paper. Native-resolution frames, the same video tokens as Qwen2.5-Omni. Run 2026-10-25."
+
+["llava-video-7b"]
+label = "LLaVA-Video"
+model_id = "Isotr0py/LLaVA-Video-7B-Qwen2-hf"
+model_revision = "dd870444ff8b5140a5166aab17be29629c96ea20"
+module = "llava_video"
+note = "LLaVA-Video-7B-Qwen2 (evaluated in the MoMentS paper) in its community transformers conversion. Each frame resized to 384x384. Run 2026-10-26."
+
+["gemma-4-12b"]
+label = "Gemma"
+model_id = "google/gemma-4-12B-it"
+model_revision = "43c9d014b231474fa7212dbb48a762566c2b255d"
+module = "gemma4"
+note = "A recent open model from a non-Qwen family; thinking off. Up to 70 tokens per frame. Run 2026-11-08."

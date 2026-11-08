@@ -1,11 +1,11 @@
-"""Gemma 4 12B (instruction-tuned, thinking off): same interface, prompts, frames and scoring as qwen_omni."""
+"""Gemma 4 12B (instruction-tuned, thinking off): shared prompts, frames and scoring from common."""
 import os
 
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import torch
 from transformers import AutoModelForMultimodalLM, AutoProcessor
 
-from qwen_omni import LETTERS, LastPositionHead, build_prompt, sample_frames, score_options  # noqa: F401
+from common import LETTERS, LastPositionHead, build_prompt, sample_frames, score_options  # noqa: F401
 
 MODEL_ID = "google/gemma-4-12B-it"
 END = "<turn|>"
@@ -21,7 +21,7 @@ def load(revision):
 
 
 def make_inputs(processor, system_text, user_text, frames=None, fps=None, followup=None):
-    """As qwen_omni.make_inputs; our frames are used as given, their rate goes in as video metadata (for the timestamps)."""
+    """As common.make_inputs; our frames are used as given, their rate goes in as video metadata (for the timestamps)."""
     content = [{"type": "text", "text": user_text}]
     if frames is not None:
         content = [{"type": "video"}] + content
