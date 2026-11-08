@@ -7,7 +7,7 @@ to infer emotions? For example, when the answer depends on a face, does a transc
 given the video?
 
 **Setup:** [MoMentS](https://github.com/villacu/MoMentS) (short films with multiple-choice theory-of-mind questions),
-Emotions category only (598 questions, 153 films). Models: five open vision-language models (see [Runs](#runs)), with
+Emotions category only (598 questions, 153 films). Models: six open vision-language models (see [Runs](#runs)), with
 no audio. Confidence is the probability of each answer letter as the model's next token. Abstention is a fifth option,
 "E. Cannot tell from the given information."
 
@@ -50,7 +50,8 @@ the judges' `judge_labels.jsonl`, `agreement.csv` and `codes_by_condition.csv`.
 | 2026-10-25 | InternVL2.5-8B (`OpenGVLab/InternVL2_5-8B-MPO-hf`, the only non-Qwen open model in the MoMentS paper) | [outputs/internvl2.5-8b](outputs/internvl2.5-8b/) |
 | 2026-10-25 | Qwen2.5-VL-7B-Instruct (MoMentS paper) | [outputs/qwen2.5-vl-7b](outputs/qwen2.5-vl-7b/) |
 | 2026-10-26 | LLaVA-Video-7B-Qwen2 (MoMentS paper; community transformers conversion `Isotr0py/LLaVA-Video-7B-Qwen2-hf`) | [outputs/llava-video-7b](outputs/llava-video-7b/) |
-| 2026-11-08 | Gemma 4 12B (`google/gemma-4-12B-it`, thinking off; a recent model from a non-Qwen family) | running |
+| 2026-11-08 | Gemma 4 12B (`google/gemma-4-12B-it`, thinking off; a recent model from a non-Qwen family) | [outputs/gemma-4-12b](outputs/gemma-4-12b/) |
+| 2026-11-08 | GLM-4.6V-Flash (`zai-org/GLM-4.6V-Flash`, 10B, thinking off; Zhipu GLM family, the largest GLM vision model that fits on one L40S; letters scored after its answer-box token, which it puts first) | [outputs/glm-4.6v-flash](outputs/glm-4.6v-flash/) (judging pending) |
 
 All full runs: 598 questions, six conditions, the same prompts, frames and option orders. The Qwen2.5-Omni folder also
 has `judge_labels_v1.jsonl`, an earlier coding run before `cites_dialogue` excluded speech repeated from the question.
@@ -118,6 +119,20 @@ All numbers below are in [notebooks/compare_models.ipynb](notebooks/compare_mode
   with the right video).
 - Judges agree (kappa 0.71–0.98).
 
+## Results: Gemma 4 12B
+
+- Cautious without a video, like Qwen2.5-VL: abstains 96% question only, 81% with the transcript, 35% with the video;
+  the wrong film's video raises it to 65% (193 start, 18 stop) and lowers the best A–D answer (57.2% to 51.0%,
+  p < 0.001).
+- Told that a video exists (T_told), it abstains more (81% to 86%), but not more where the video mattered.
+- First model whose explanations often notice the wrong video: 24.6% (147 of 598, both judges) say the clip does not
+  show the scene in the question. Still, 41% of wrong-video explanations cite things seen, and it says it used a video
+  in 78%.
+- Without any video (Q_noE), 22% of its explanations cite things seen (e.g. facial expressions).
+- Without option E it often starts a sentence instead of a letter: in 44% of Q_noE questions less than half of the
+  probability is on A–D.
+- Judges agree (kappa 0.72–0.99).
+
 ## Files
 
 ```
@@ -136,6 +151,7 @@ src/
   qwen_vl.py                    Qwen2.5-VL-7B: loading, inputs
   llava_video.py                LLaVA-Video-7B: loading
   gemma4.py                     Gemma 4 12B: loading, inputs, text generation
+  glm4v.py                      GLM-4.6V-Flash: loading, inputs, scoring, text generation
   video_alignment.py            transcript-video sync check (used by data_preprocessing.ipynb)
 configs/
   full_run.toml                 frames, conditions, prompts, option order: the same for every model
@@ -169,5 +185,5 @@ in git.
 
 Python 3.12. `pip install -r requirements.txt`. The models run on the GPU when there is one, otherwise on CPU, where a
 question with video takes about 1–3 minutes. On one NVIDIA L40S (46 GB) a full run (598 questions, 6 conditions) takes
-3.8–6.4 hours depending on the model (23–39 s per question). `code_explanations.ipynb` needs `OPENROUTER_API_KEY` in a
+3.7–6.4 hours depending on the model (22–39 s per question). `code_explanations.ipynb` needs `OPENROUTER_API_KEY` in a
 git-ignored `.env`; a full judge run costs about $2.
