@@ -5,10 +5,12 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import torch
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
-from common import LETTERS, LastPositionHead, build_prompt, sample_frames, score_options  # noqa: F401
+import common
+from common import LETTERS, LastPositionHead, build_prompt, sample_frames  # noqa: F401
 
 MODEL_ID = "zai-org/GLM-4.6V-Flash"
 END = ["<|endoftext|>", "<|user|>", "<|observation|>"]
+BOX = ["<|begin_of_box|>", "<|end_of_box|>"]  # GLM puts its final answer in this box
 
 
 def load(revision):
@@ -42,6 +44,15 @@ def make_inputs(processor, system_text, user_text, frames=None, fps=None, follow
                      return_tensors="pt"), prompt
 
 
+def score_options(model, processor, inputs, letters=LETTERS):
+    """As common.score_options, after the box-opening token, which the model puts before its answer (~0.98)."""
+    inputs = inputs.copy()
+    box = processor.tokenizer.convert_tokens_to_ids(BOX[0])
+    for key, value in [("input_ids", box), ("attention_mask", 1), ("mm_token_type_ids", 0)]:
+        inputs[key] = torch.cat([inputs[key], torch.full_like(inputs[key][:, :1], value)], dim=1)
+    return common.score_options(model, processor, inputs, letters)
+
+
 @torch.inference_mode()
 def generate_text(model, processor, inputs, max_new_tokens):
     end_ids = processor.tokenizer.convert_tokens_to_ids(END)
@@ -50,5 +61,8 @@ def generate_text(model, processor, inputs, max_new_tokens):
                          pad_token_id=end_ids[0])
     new = out[0, inputs["input_ids"].shape[1]:]
     hit_limit = len(new) == max_new_tokens and new[-1].item() not in end_ids
-    return {"text": processor.tokenizer.decode(new, skip_special_tokens=True).strip(),
+    text = processor.tokenizer.decode(new, skip_special_tokens=True)
+    for token in BOX:
+        text = text.replace(token, "")
+    return {"text": text.strip(),
             "n_tokens": len(new), "hit_limit": hit_limit}
