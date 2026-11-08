@@ -39,6 +39,10 @@ four-option evidence question (nothing else / a transcript / a video / both). Ex
 | 2026-10-25 | As 06 with a third model, Qwen2.5-VL-7B-Instruct (MoMentS paper) | [11](notebooks/11_2026-10-25_qwen25vl_full.ipynb) | [config](configs/2026-10-25_qwen25vl_full.toml) | [outputs](outputs/2026-10-25_qwen25vl_full/) |
 | 2026-10-26 | Coding of 11's explanations, as 07 (same judges and prompt) | [12](notebooks/12_2026-10-26_code_explanations_qwen25vl.ipynb) | [config](configs/2026-10-26_code_explanations_qwen25vl.toml) | [outputs](outputs/2026-10-26_code_explanations_qwen25vl/) |
 | 2026-10-26 | Qwen-Omni vs InternVL vs Qwen-VL, as 10 (no model needed) | [13](notebooks/13_2026-10-26_compare_three_models.ipynb) | - | [outputs](outputs/2026-10-26_compare_three_models/) |
+| 2026-10-26 | As 06 with a fourth model, LLaVA-Video-7B-Qwen2 (MoMentS paper), in its community transformers conversion `Isotr0py/LLaVA-Video-7B-Qwen2-hf` | [14](notebooks/14_2026-10-26_llava_video_full.ipynb) | [config](configs/2026-10-26_llava_video_full.toml) | [outputs](outputs/2026-10-26_llava_video_full/) |
+| 2026-10-26 | Coding of 14's explanations, as 07 (same judges and prompt) | [15](notebooks/15_2026-10-26_code_explanations_llava_video.ipynb) | [config](configs/2026-10-26_code_explanations_llava_video.toml) | [outputs](outputs/2026-10-26_code_explanations_llava_video/) |
+| 2026-11-08 | As 06 with Gemma 4 12B, a recent model from a non-Qwen family (running) | [16](notebooks/16_2026-11-08_gemma4_full.ipynb) | [config](configs/2026-11-08_gemma4_full.toml) | - |
+| 2026-11-08 | Comparison of all models, as 10 (no model needed; models are added as they finish) | [17](notebooks/17_2026-11-08_compare_models.ipynb) | - | [outputs](outputs/2026-11-08_compare_models/) |
 
 Each experiment notebook ends with its analysis and plots. Results are appended to `results.jsonl` one row per
 (question, condition), so a run can be stopped and resumed, or extended with more questions.
@@ -85,6 +89,20 @@ Each experiment notebook ends with its analysis and plots. Results are appended 
 - Judges agree (kappa 0.74–0.99; `notices_mismatch` 0.47, rare). Numbers in
   [notebook 13](notebooks/13_2026-10-26_compare_three_models.ipynb).
 
+## Fourth model (experiments 14–15, LLaVA-Video-7B)
+
+- Abstains least of the four models: 28% question only, 14% with the transcript; the right video changes neither
+  abstention (14% to 15%) nor how often the best A–D answer is right (54% both).
+- The wrong film's video raises abstention to 25% (74 start, 14 stop, p < 0.001) and lowers the best A–D answer
+  (54% to 49%, p = 0.006).
+- Told that a video exists (T_told), it abstains no more than with the transcript (11 start, 9 stop): the first model
+  that does not react.
+- Says it used a video in 41% with its own video, 32% with the wrong one, and 19% with none (Q_noE); explanations cite
+  things seen in 21%, 17% and 6%; none notices the wrong video (the one mismatch flag by both judges is
+  with the right video).
+- Judges agree (kappa 0.71–0.98). Numbers for all models in
+  [notebook 17](notebooks/17_2026-11-08_compare_models.ipynb).
+
 ## Files
 
 ```
@@ -102,10 +120,16 @@ notebooks/
   11_2026-10-25_...ipynb        as 06 with Qwen2.5-VL-7B
   12_2026-10-26_...ipynb        as 07 for 11's explanations
   13_2026-10-26_...ipynb        three-model comparison (tables and figures)
+  14_2026-10-26_...ipynb        as 06 with LLaVA-Video-7B
+  15_2026-10-26_...ipynb        as 07 for 14's explanations
+  16_2026-11-08_...ipynb        as 06 with Gemma 4 12B
+  17_2026-11-08_...ipynb        comparison of all models (tables and figures)
 src/
   qwen_omni.py                  model loading, frame sampling, prompt building, letter scoring, text generation
   internvl.py                   the same for InternVL2.5-8B (same prompts and frames)
   qwen_vl.py                    the same for Qwen2.5-VL-7B
+  llava_video.py                the same for LLaVA-Video-7B
+  gemma4.py                     the same for Gemma 4 12B
   video_alignment.py            transcript-video sync check (used by notebook 01)
 configs/                        one TOML per experiment: model revision, frames, prompt texts
 outputs/<date>_<experiment>/    results.jsonl, figures/, other run outputs
