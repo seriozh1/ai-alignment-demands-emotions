@@ -36,3 +36,10 @@ model_id = "google/gemma-4-12B-it"
 model_revision = "43c9d014b231474fa7212dbb48a762566c2b255d"
 module = "gemma4"
 note = "A recent open model from a non-Qwen family; thinking off. Up to 70 tokens per frame. Run 2026-11-08."
+
+["glm-4.6v-flash"]
+label = "GLM"
+model_id = "zai-org/GLM-4.6V-Flash"
+model_revision = "411bb4d77144a3f03accbf4b780f5acb8b7cde4e"
+module = "glm4v"
+note = "Zhipu GLM family, the largest GLM vision model that fits on one L40S (10B); thinking off. Native-resolution frames, two frames per video step, a timestamp per step."
