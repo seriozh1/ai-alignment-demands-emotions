@@ -1,5 +1,6 @@
 # Private data: datasets, private answer keys and tables built from them
 data-private/
+files/
 
 # Environment variables and secrets
 .env

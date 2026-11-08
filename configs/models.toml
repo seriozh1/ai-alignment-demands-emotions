@@ -4,6 +4,8 @@
 
 ["qwen2.5-omni-7b"]
 label = "Qwen-Omni"  # short name in tables and figures
+llm = "Qwen2.5"  # language-model family underneath
+size = "7B"
 model_id = "Qwen/Qwen2.5-Omni-7B"
 model_revision = "ae9e1690543ffd5c0221dc27f79834d0294cba00"  # same pinned commit as the pilots
 module = "qwen_omni"
@@ -11,6 +13,8 @@ note = "Text-producing part (Thinker) only, no audio. Run 2026-10-18."
 
 ["internvl2.5-8b"]
 label = "InternVL"
+llm = "InternLM2.5"  # language-model family underneath
+size = "8B"
 model_id = "OpenGVLab/InternVL2_5-8B-MPO-hf"
 model_revision = "543db189852edd2dbf0c0395c6afe4159cdc842f"
 module = "internvl"
@@ -18,6 +22,8 @@ note = "InternVL2.5-8B after preference optimization, the native-transformers re
 
 ["qwen2.5-vl-7b"]
 label = "Qwen-VL"
+llm = "Qwen2.5"  # language-model family underneath
+size = "7B"
 model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
 model_revision = "cc594898137f460bfe9f0759e9844b3ce807cfb5"
 module = "qwen_vl"
@@ -25,6 +31,8 @@ note = "Evaluated in the MoMentS paper. Native-resolution frames, the same video
 
 ["llava-video-7b"]
 label = "LLaVA-Video"
+llm = "Qwen2"  # language-model family underneath
+size = "7B"
 model_id = "Isotr0py/LLaVA-Video-7B-Qwen2-hf"
 model_revision = "dd870444ff8b5140a5166aab17be29629c96ea20"
 module = "llava_video"
@@ -32,6 +40,8 @@ note = "LLaVA-Video-7B-Qwen2 (evaluated in the MoMentS paper) in its community t
 
 ["gemma-4-12b"]
 label = "Gemma"
+llm = "Gemma 4"  # language-model family underneath
+size = "12B"
 model_id = "google/gemma-4-12B-it"
 model_revision = "43c9d014b231474fa7212dbb48a762566c2b255d"
 module = "gemma4"
@@ -39,7 +49,18 @@ note = "A recent open model from a non-Qwen family; thinking off. Up to 70 token
 
 ["glm-4.6v-flash"]
 label = "GLM"
+llm = "GLM-4"  # language-model family underneath
+size = "10B"
 model_id = "zai-org/GLM-4.6V-Flash"
 model_revision = "411bb4d77144a3f03accbf4b780f5acb8b7cde4e"
 module = "glm4v"
 note = "Zhipu GLM family, the largest GLM vision model that fits on one L40S (10B); thinking off. Letters scored after its answer-box token (it opens its answers with it, p ~0.98). Native-resolution frames, two frames per video step, a timestamp per step."
+
+["perception-lm-8b"]
+label = "PLM"
+llm = "Llama 3.1"  # language-model family underneath
+size = "8B"
+model_id = "facebook/Perception-LM-8B"
+model_revision = "969497c228e880aacb82693813f3169330bec9c8"
+module = "perception_lm"
+note = "Meta PerceptionLM (Llama 3.1 family, gated: FAIR noncommercial research licence). Every second of the shared 64 frames (32; its context is 11,520 tokens), each resized to 448x448 (256 tokens)."
