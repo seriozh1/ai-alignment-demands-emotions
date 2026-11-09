@@ -7,7 +7,7 @@ to infer emotions? For example, when the answer depends on a face, does a transc
 given the video?
 
 **Setup:** [MoMentS](https://github.com/villacu/MoMentS) (short films with multiple-choice theory-of-mind questions),
-Emotions category only (598 questions, 153 films). Models: six open vision-language models (see [Runs](#runs)), with
+Emotions category only (598 questions, 153 films). Models: seven open vision-language models (see [Runs](#runs)), with
 no audio. Confidence is the probability of each answer letter as the model's next token. Abstention is a fifth option,
 "E. Cannot tell from the given information."
 
@@ -51,7 +51,8 @@ the judges' `judge_labels.jsonl`, `agreement.csv` and `codes_by_condition.csv`.
 | 2026-10-25 | Qwen2.5-VL-7B-Instruct (MoMentS paper) | [outputs/qwen2.5-vl-7b](outputs/qwen2.5-vl-7b/) |
 | 2026-10-26 | LLaVA-Video-7B-Qwen2 (MoMentS paper; community transformers conversion `Isotr0py/LLaVA-Video-7B-Qwen2-hf`) | [outputs/llava-video-7b](outputs/llava-video-7b/) |
 | 2026-11-08 | Gemma 4 12B (`google/gemma-4-12B-it`, thinking off; a recent model from a non-Qwen family) | [outputs/gemma-4-12b](outputs/gemma-4-12b/) |
-| 2026-11-08 | GLM-4.6V-Flash (`zai-org/GLM-4.6V-Flash`, 10B, thinking off; Zhipu GLM family, the largest GLM vision model that fits on one L40S; letters scored after its answer-box token, which it puts first) | [outputs/glm-4.6v-flash](outputs/glm-4.6v-flash/) (judging pending) |
+| 2026-11-08 | GLM-4.6V-Flash (`zai-org/GLM-4.6V-Flash`, 10B, thinking off; Zhipu GLM family, the largest GLM vision model that fits on one L40S; letters scored after its answer-box token, which it puts first) | [outputs/glm-4.6v-flash](outputs/glm-4.6v-flash/) |
+| 2026-11-09 | PerceptionLM-8B (`facebook/Perception-LM-8B`; Meta, Llama 3.1 family; 32 of the shared 64 frames, its context limit) | [outputs/perception-lm-8b](outputs/perception-lm-8b/) |
 
 All full runs: 598 questions, six conditions, the same prompts, frames and option orders. The Qwen2.5-Omni folder also
 has `judge_labels_v1.jsonl`, an earlier coding run before `cites_dialogue` excluded speech repeated from the question.
@@ -133,6 +134,27 @@ All numbers below are in [notebooks/compare_models.ipynb](notebooks/compare_mode
   probability is on A–D.
 - Judges agree (kappa 0.72–0.99).
 
+## Results: GLM-4.6V-Flash
+
+- Abstains 62% question only, 48% with the transcript, 32% with the video; the wrong film's video raises it to 61%
+  (185 start, 10 stop) and lowers the best A–D answer from 64.7% (highest of the models) to 52.3%.
+- Told that a video exists (T_told), it abstains a little more (48% to 52%), slightly more where the video mattered
+  (+0.060 vs +0.038 P(E), p = 0.012).
+- 9.2% of wrong-video explanations notice the mismatch; 23% still cite things seen.
+- Its evidence-question answers follow the letter position (the option shown as C is picked 34–47% of the time), so
+  "says it used a video" (66% even without one) is unreliable for GLM; its explanations are the better self-report.
+- Judges agree (kappa 0.79–0.99).
+
+## Results: PerceptionLM-8B
+
+- Abstains least of all models without evidence (16% question only) and, unlike every other model, more with the
+  transcript (31%; 126 start, 38 stop). The video lowers it to 17%, the wrong film's video raises it to 33% (120 start,
+  26 stop) and lowers the best A–D answer from 57% to 47%.
+- Told that a video exists (T_told), it hardly changes (31% to 32%; 23 start, 15 stop, p = 0.3).
+- Cites things seen in 25% of explanations without any video (Q_noE), the most of all models, and in 45% with the wrong
+  video; 1.0% notice the mismatch.
+- Judges agree (kappa 0.70–0.96; the lowest is notices_mismatch, only about 10 positives).
+
 ## Files
 
 ```
@@ -142,6 +164,7 @@ notebooks/
   run_model.ipynb               run one model on all questions; GPU
   code_explanations.ipynb       code one model's explanations with two LLM judges; agreement, codes by condition
   compare_models.ipynb          all statistics, tables and figures for all models
+  paper_figures.ipynb           paper tables and figures (into files/latex-paper/experiment/)
   pilot_2026-09-28_t_vs_vt.ipynb                    pilot run + analysis
   pilot_2026-10-04_abstain_mismatch_explain.ipynb   pilot: abstention / mismatch / explanations + analysis
 src/
@@ -152,6 +175,7 @@ src/
   llava_video.py                LLaVA-Video-7B: loading
   gemma4.py                     Gemma 4 12B: loading, inputs, text generation
   glm4v.py                      GLM-4.6V-Flash: loading, inputs, scoring, text generation
+  perception_lm.py              PerceptionLM-8B: loading, 32 frames, inputs, text generation
   video_alignment.py            transcript-video sync check (used by data_preprocessing.ipynb)
 configs/
   full_run.toml                 frames, conditions, prompts, option order: the same for every model
